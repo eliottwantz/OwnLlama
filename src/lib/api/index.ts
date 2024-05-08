@@ -1,4 +1,5 @@
 import { DocumentSchema } from '$lib/document';
+import { listModels, promptLLM } from '$lib/ollama';
 import { ensureCollection, qdrant } from '$lib/qdrant';
 import { COLLECTION_NAME, insertDocuments } from '$lib/rag';
 import cors from '@elysiajs/cors';
@@ -9,6 +10,34 @@ await ensureCollection(COLLECTION_NAME);
 export const api = new Elysia({ prefix: '/api' })
 	.use(cors())
 	.get('/', () => 'rad-qdrant 🔥😁👍')
+	.get('/models', async () => {
+		const models = await listModels();
+		if (!models) {
+			return {
+				error: 'No local ollama models installed. Go to https://ollama.com/library to install one.'
+			};
+		}
+		return { models: models.map((m) => m.name) };
+	})
+	.post(
+		'/prompt',
+		async ({ body, error }) => {
+			console.log('Question from user:', body.prompt);
+			const res = await promptLLM(body.prompt);
+			if (res instanceof Error) {
+				console.log('Failed to prompt LLM:\n', res);
+				return error(500, `Failed to prompt LLM: ${res.message}`);
+			} else {
+				console.log('LLM response:\n', res);
+				return { answer: res.response };
+			}
+		},
+		{
+			body: t.Object({
+				prompt: t.String()
+			})
+		}
+	)
 	.get('/documents', async () => {
 		const documents = await qdrant.getCollection(COLLECTION_NAME);
 		return documents;
