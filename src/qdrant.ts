@@ -5,16 +5,14 @@ export const qdrant = new QdrantClient({
 });
 
 export const ensureCollection = async (collectionName: string) => {
-  try {
-    await qdrant.getCollection(collectionName);
-    console.log(`Collection ${collectionName} already exists`);
-  } catch (e) {
-    console.log("Creating collection", collectionName);
-    await qdrant.createCollection(collectionName, {
-      vectors: {
-        size: 768,
-        distance: "Cosine",
-      },
-    });
-  }
+  const exists = await qdrant.collectionExists(collectionName);
+  if (exists) return;
+
+  console.log("Creating collection", collectionName);
+  await qdrant.createCollection(collectionName, {
+    vectors: {
+      size: 768,
+      distance: "Cosine",
+    },
+  });
 };
