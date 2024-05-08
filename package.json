@@ -1,0 +1,17 @@
+{
+  "name": "rag-qdrant",
+  "type": "module",
+  "scripts": {
+    "start": "bun run main.ts",
+    "dev": "bun run --watch main.ts",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@types/bun": "1",
+    "typescript": "5"
+  },
+  "dependencies": {
+    "@qdrant/js-client-rest": "^1.9.0",
+    "elysia": "1"
+  }
+}
