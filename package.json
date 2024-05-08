@@ -13,7 +13,13 @@
     "typescript": "5"
   },
   "dependencies": {
+    "@langchain/nomic": "^0.0.4",
     "@qdrant/js-client-rest": "^1.9.0",
-    "elysia": "1"
+    "elysia": "1",
+    "langchain": "^0.1.36",
+    "ollama": "^0.5.0"
+  },
+  "overrides": {
+    "@langchain/core": "0.1.36"
   }
 }
