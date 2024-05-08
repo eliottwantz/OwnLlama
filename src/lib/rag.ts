@@ -1,4 +1,4 @@
-import { Document, DocumentWithEmbedding } from './document';
+import type { Document, DocumentWithEmbedding } from './document';
 import { embed } from './ollama';
 import { qdrant } from './qdrant';
 
@@ -13,7 +13,7 @@ const createEmbeddings = async (documents: Document[]): Promise<DocumentWithEmbe
 			console.log('Failed to embed document starting with:', document.content.slice(0, 30));
 			continue;
 		}
-		docsWithEmbeddings.push({ ...document, embedding });
+		docsWithEmbeddings.push({ ...document, embedding, id: crypto.randomUUID() });
 	}
 
 	return docsWithEmbeddings;
@@ -31,7 +31,7 @@ export const insertDocuments = async (documents: Document[]) => {
 		.upsert(COLLECTION_NAME, {
 			points: docsWithEmbeddings.map((d) => {
 				return {
-					id: crypto.randomUUID(),
+					id: d.id,
 					vector: d.embedding,
 					payload: {
 						document: d.content,
@@ -45,5 +45,8 @@ export const insertDocuments = async (documents: Document[]) => {
 			return null;
 		});
 
-	return upsertResult;
+	return {
+		upsertResult,
+		docs: docsWithEmbeddings
+	};
 };

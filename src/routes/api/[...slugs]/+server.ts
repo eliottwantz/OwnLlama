@@ -1,4 +1,4 @@
-import { api } from '.';
+import { api } from '$lib/api';
 
 export const GET = ({ request }) => api.handle(request);
 export const POST = ({ request }) => api.handle(request);
