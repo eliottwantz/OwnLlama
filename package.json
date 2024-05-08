@@ -4,6 +4,8 @@
   "scripts": {
     "start": "bun run main.ts",
     "dev": "bun run --watch main.ts",
+    "qdrant": "docker run --rm -d --name rag-qdrant -p 6333:6333 -p 6334:6334 -v $(pwd)/qdrant_storage:/qdrant/storage qdrant/qdrant",
+    "qdrant:ui": "xdg-open http://localhost:6333/dashboard",
     "typecheck": "tsc"
   },
   "devDependencies": {
