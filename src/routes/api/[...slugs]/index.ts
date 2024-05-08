@@ -5,7 +5,7 @@ import { Elysia, t } from 'elysia';
 
 await ensureCollection(COLLECTION_NAME);
 
-export const api = new Elysia()
+export const api = new Elysia({ prefix: '/api' })
 	.get('/', () => 'rad-qdrant 🔥😁👍')
 	.get('/documents', async () => {
 		const documents = await qdrant.getCollection(COLLECTION_NAME);
