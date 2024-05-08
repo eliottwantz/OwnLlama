@@ -1,5 +1,12 @@
 .DS_Store
+node_modules
+/build
+/.svelte-kit
+/package
 .env
-.env.local
-node_modules/
+.env.*
+!.env.example
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
 qdrant_storage
