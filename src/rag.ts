@@ -1,6 +1,6 @@
 import { Document, DocumentWithEmbedding } from "./document";
-import { embed } from "./ollama";
-import { qdrant } from "./qdrant";
+import { embed } from "../web/src/lib/ollama";
+import { qdrant } from "../web/src/lib/qdrant";
 
 export const COLLECTION_NAME = "knwoledge_base";
 
