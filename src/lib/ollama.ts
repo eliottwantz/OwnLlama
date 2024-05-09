@@ -1,5 +1,7 @@
 import ollama from 'ollama';
 import { type Document } from './document';
+import { getPoint, qdrant } from '$lib/qdrant';
+import { COLLECTION_NAME } from '$lib/rag';
 
 export const listModels = async () => {
 	const res = await ollama
@@ -32,6 +34,30 @@ export const promptLLM = async (prompt: string, model: string = 'llama3') => {
 		.generate({
 			model,
 			prompt
+		})
+		.then((res) => res)
+		.catch((e) => e as Error);
+
+	return res;
+};
+
+export const promptLLMWithKnowledge = async (
+	prompt: string,
+	docId: string,
+	model: string = 'llama3'
+) => {
+	const document = await getPoint(docId).catch((e) => {
+		console.log('Error getting document:\n', e);
+		return e as Error;
+	});
+
+	if (document instanceof Error) return document;
+
+	const res = await ollama
+		.generate({
+			model,
+			prompt
+			// context: document.data.result?.vector?.at(0) ?? undefined
 		})
 		.then((res) => res)
 		.catch((e) => e as Error);

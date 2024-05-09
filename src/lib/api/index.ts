@@ -1,5 +1,5 @@
 import { DocumentSchema } from '$lib/document';
-import { listModels, promptLLM } from '$lib/ollama';
+import { listModels, promptLLM, promptLLMWithKnowledge } from '$lib/ollama';
 import { ensureCollection, qdrant } from '$lib/qdrant';
 import { COLLECTION_NAME, insertDocuments } from '$lib/rag';
 import cors from '@elysiajs/cors';
@@ -34,6 +34,26 @@ export const api = new Elysia({ prefix: '/api' })
 		},
 		{
 			body: t.Object({
+				prompt: t.String()
+			})
+		}
+	)
+	.post(
+		'/prompt-with-knowledge',
+		async ({ body, error }) => {
+			console.log('Question from user:', body.prompt);
+			const res = await promptLLMWithKnowledge(body.prompt, body.docId);
+			if (res instanceof Error) {
+				console.log('Failed to prompt LLM:\n', res);
+				return error(500, `Failed to prompt LLM: ${res.message}`);
+			} else {
+				console.log('LLM response:\n', res);
+				return { answer: res.response };
+			}
+		},
+		{
+			body: t.Object({
+				docId: t.String(),
 				prompt: t.String()
 			})
 		}
