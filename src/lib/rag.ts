@@ -1,19 +1,21 @@
+import { embedDocuments } from '$lib/ollama';
 import type { Document, DocumentWithEmbedding } from './document';
-import { embed } from './ollama';
 import { qdrant } from './qdrant';
 
 export const COLLECTION_NAME = 'knwoledge_base';
 
-const createEmbeddings = async (documents: Document[]): Promise<DocumentWithEmbedding[]> => {
+const createEmbeddings = async (documents: Document[]): Promise<DocumentWithEmbedding[] | null> => {
 	const docsWithEmbeddings: DocumentWithEmbedding[] = [];
 
-	for (const document of documents) {
-		const embedding = await embed(document);
-		if (embedding === null) {
-			console.log('Failed to embed document starting with:', document.content.slice(0, 30));
-			continue;
-		}
-		docsWithEmbeddings.push({ ...document, embedding, id: crypto.randomUUID() });
+	const embeddings = await embedDocuments(documents);
+	if (!embeddings) {
+		console.log('Failed to embed documents');
+		return null;
+	}
+
+	for (const embedding of embeddings) {
+		const idx = embeddings.indexOf(embedding);
+		docsWithEmbeddings.push({ id: crypto.randomUUID(), embedding, ...documents[idx] });
 	}
 
 	return docsWithEmbeddings;

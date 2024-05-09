@@ -1,7 +1,8 @@
+import type { Document } from '$lib/document';
+import { getPoint } from '$lib/qdrant';
+import { OllamaEmbeddings } from '@langchain/community/embeddings/ollama';
+import { Ollama } from '@langchain/community/llms/ollama';
 import ollama from 'ollama';
-import { type Document } from './document';
-import { getPoint, qdrant } from '$lib/qdrant';
-import { COLLECTION_NAME } from '$lib/rag';
 
 export const listModels = async () => {
 	const res = await ollama
@@ -14,28 +15,30 @@ export const listModels = async () => {
 	return res;
 };
 
-export const embed = async (
-	document: Document,
-	model: string = 'nomic-embed-text'
-): Promise<number[] | null> => {
-	const res = await ollama
-		.embeddings({
-			model: 'nomic-embed-text',
-			prompt: document.content
-		})
-		.then((res) => res.embedding)
-		.catch(() => null);
+export const embedDocuments = async (documents: Document[], model: string = 'nomic-embed-text') => {
+	const embeddings = new OllamaEmbeddings({
+		model
+	});
+
+	const res = await embeddings
+		.embedDocuments(documents.map((d) => d.content))
+		.then((res) => res)
+		.catch((e) => {
+			console.log('Error embedding documents:\n', e);
+			return null;
+		});
 
 	return res;
 };
 
 export const promptLLM = async (prompt: string, model: string = 'llama3') => {
-	const res = await ollama
-		.generate({
-			model,
-			prompt
+	const client = new Ollama({ model });
+	const res = await client
+		.generate([prompt])
+		.then((res) => {
+			console.log('Gen output:\n', res);
+			return res;
 		})
-		.then((res) => res)
 		.catch((e) => e as Error);
 
 	return res;
@@ -51,16 +54,32 @@ export const promptLLMWithKnowledge = async (
 		return e as Error;
 	});
 
-	if (document instanceof Error) return document;
+	if (document instanceof Error) {
+		return {
+			success: false,
+			error: document
+		} as const;
+	}
 
 	const res = await ollama
 		.generate({
 			model,
 			prompt
-			// context: document.data.result?.vector?.at(0) ?? undefined
 		})
-		.then((res) => res)
-		.catch((e) => e as Error);
+		.then(
+			(res) =>
+				({
+					success: true,
+					res
+				}) as const
+		)
+		.catch((e) => {
+			console.log('Error generating response:\n', e);
+			return {
+				success: false,
+				error: e as Error
+			} as const;
+		});
 
 	return res;
 };

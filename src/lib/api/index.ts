@@ -1,5 +1,5 @@
 import { DocumentSchema } from '$lib/document';
-import { listModels, promptLLM, promptLLMWithKnowledge } from '$lib/ollama';
+import { embedDocuments, listModels, promptLLM, promptLLMWithKnowledge } from '$lib/ollama';
 import { ensureCollection, qdrant } from '$lib/qdrant';
 import { COLLECTION_NAME, insertDocuments } from '$lib/rag';
 import cors from '@elysiajs/cors';
@@ -29,7 +29,7 @@ export const api = new Elysia({ prefix: '/api' })
 				return error(500, `Failed to prompt LLM: ${res.message}`);
 			} else {
 				console.log('LLM response:\n', res);
-				return { answer: res.response };
+				return { answer: res.generations[0][0].text };
 			}
 		},
 		{
@@ -43,12 +43,12 @@ export const api = new Elysia({ prefix: '/api' })
 		async ({ body, error }) => {
 			console.log('Question from user:', body.prompt);
 			const res = await promptLLMWithKnowledge(body.prompt, body.docId);
-			if (res instanceof Error) {
-				console.log('Failed to prompt LLM:\n', res);
-				return error(500, `Failed to prompt LLM: ${res.message}`);
+			if (!res.success) {
+				console.log('Failed to prompt LLM:\n', res.error);
+				return error(500, `Failed to prompt LLM: ${res.error.message}`);
 			} else {
-				console.log('LLM response:\n', res);
-				return { answer: res.response };
+				console.log('LLM response:\n', res.res);
+				return { answer: res.res.response };
 			}
 		},
 		{
@@ -56,6 +56,20 @@ export const api = new Elysia({ prefix: '/api' })
 				docId: t.String(),
 				prompt: t.String()
 			})
+		}
+	)
+	.post(
+		'/embed',
+		async ({ body, error }) => {
+			const res = await embedDocuments([body]);
+			if (!res) {
+				return error(500, 'Failed to embed document');
+			}
+
+			return { embeddings: res };
+		},
+		{
+			body: DocumentSchema
 		}
 	)
 	.get('/documents', async () => {

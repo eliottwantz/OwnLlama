@@ -1,4 +1,4 @@
-import { type Static, t } from 'elysia';
+import { t, type Static } from 'elysia';
 
 export const DocumentSchema = t.Object({
 	content: t.String(),
