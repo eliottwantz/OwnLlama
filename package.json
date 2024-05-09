@@ -5,6 +5,7 @@
     "@elysiajs/cors": "^1.0.2",
     "@elysiajs/eden": "^1.0.13",
     "@langchain/community": "^0.0.55",
+    "@langchain/qdrant": "^0.0.2",
     "@qdrant/js-client-rest": "^1.9.0",
     "elysia": "1",
     "langchain": "^0.1.36",

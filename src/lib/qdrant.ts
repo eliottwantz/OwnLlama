@@ -1,28 +1,25 @@
-import { COLLECTION_NAME } from '$lib/rag';
 import { QdrantClient } from '@qdrant/js-client-rest';
 
-export const qdrant = new QdrantClient({
-	url: 'http://127.0.0.1:6333'
-});
+export const EMBEDDINGS_COLLECTION_NAME = 'knwoledge_base';
 
-export const ensureCollection = async (collectionName: string) => {
-	const exists = await qdrant.collectionExists(collectionName);
+export const createQdrantClient = () => {
+	const client = new QdrantClient({
+		url: process.env.QDRANT_URL ?? 'http://127.0.0.1:6333'
+	});
+	return client;
+};
+
+export const ensureCollection = async () => {
+	const client = createQdrantClient();
+
+	const exists = await client.collectionExists(EMBEDDINGS_COLLECTION_NAME);
 	if (exists) return;
 
-	console.log('Creating collection', collectionName);
-	await qdrant.createCollection(collectionName, {
+	console.log('Creating collection', EMBEDDINGS_COLLECTION_NAME);
+	await client.createCollection(EMBEDDINGS_COLLECTION_NAME, {
 		vectors: {
 			size: 768,
 			distance: 'Cosine'
 		}
 	});
-};
-
-export const getPoint = async (id: string) => {
-	const document = await qdrant.api('points').getPoint({
-		collection_name: COLLECTION_NAME,
-		id
-	});
-
-	return document;
 };
