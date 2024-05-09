@@ -1,11 +1,11 @@
 import { DocumentSchema } from '$lib/document';
-import { listModels, promptLLM, promptLLMWithKnowledge } from '$lib/ollama';
-import { ensureCollection, qdrant } from '$lib/qdrant';
-import { COLLECTION_NAME, insertDocuments } from '$lib/rag';
+import { generateEmbeddings, insertDocuments } from '$lib/langchain';
+import { listModels, promptLLM } from '$lib/ollama';
+import { EMBEDDINGS_COLLECTION_NAME, createQdrantClient, ensureCollection } from '$lib/qdrant';
 import cors from '@elysiajs/cors';
 import { Elysia, t } from 'elysia';
 
-await ensureCollection(COLLECTION_NAME);
+await ensureCollection();
 
 export const api = new Elysia({ prefix: '/api' })
 	.use(cors())
@@ -23,13 +23,13 @@ export const api = new Elysia({ prefix: '/api' })
 		'/prompt',
 		async ({ body, error }) => {
 			console.log('Question from user:', body.prompt);
-			const res = await promptLLM(body.prompt);
-			if (res instanceof Error) {
-				console.log('Failed to prompt LLM:\n', res);
-				return error(500, `Failed to prompt LLM: ${res.message}`);
-			} else {
-				console.log('LLM response:\n', res);
-				return { answer: res.response };
+			try {
+				const res = await promptLLM(body.prompt);
+				return { answer: res };
+			} catch (e) {
+				console.log('Failed to prompt LLM:\n', e);
+				if (e instanceof Error) return error(500, `Failed to prompt LLM: ${e.message}`);
+				return error(500, 'Failed to prompt LLM');
 			}
 		},
 		{
@@ -42,14 +42,14 @@ export const api = new Elysia({ prefix: '/api' })
 		'/prompt-with-knowledge',
 		async ({ body, error }) => {
 			console.log('Question from user:', body.prompt);
-			const res = await promptLLMWithKnowledge(body.prompt, body.docId);
-			if (res instanceof Error) {
-				console.log('Failed to prompt LLM:\n', res);
-				return error(500, `Failed to prompt LLM: ${res.message}`);
-			} else {
-				console.log('LLM response:\n', res);
-				return { answer: res.response };
-			}
+			// const res = await promptLLMWithKnowledge(body.prompt, body.docId);
+			// if (!res.success) {
+			// 	console.log('Failed to prompt LLM:\n', res.error);
+			// 	return error(500, `Failed to prompt LLM: ${res.error.message}`);
+			// } else {
+			// 	console.log('LLM response:\n', res.res);
+			// 	return { answer: res.res };
+			// }
 		},
 		{
 			body: t.Object({
@@ -58,22 +58,46 @@ export const api = new Elysia({ prefix: '/api' })
 			})
 		}
 	)
-	.get('/documents', async () => {
-		const documents = await qdrant.getCollection(COLLECTION_NAME);
-		return documents;
+	.post(
+		'/embed',
+		async ({ body, error }) => {
+			try {
+				const res = await generateEmbeddings([body]);
+				return { embeddings: res };
+			} catch (e) {
+				console.log('Failed to embed document:\n', e);
+				if (e instanceof Error) return error(500, `Failed to embed document: ${e.message}`);
+				return error(500, 'Failed to embed document');
+			}
+		},
+		{
+			body: DocumentSchema
+		}
+	)
+	.get('/documents', async ({ error }) => {
+		const client = createQdrantClient();
+		try {
+			const documents = await client.getCollection(EMBEDDINGS_COLLECTION_NAME);
+			return documents;
+		} catch (e) {
+			console.log('Failed to get documents:\n', e);
+			if (e instanceof Error) return error(500, `Failed to get documents: ${e.message}`);
+			return error(500, 'Failed to get documents');
+		}
 	})
 	.post(
 		'/documents',
 		async ({ set, body, error }) => {
-			const res = await insertDocuments([body]);
-			if (!res) {
+			try {
+				const store = await insertDocuments([body]);
+				console.log(`Inserted document:\n`, store.toJSON());
+				set.status = 201;
+				return { msg: 'Successfully uploaded documents' };
+			} catch (e) {
 				console.log('Failed to insert document');
+				if (e instanceof Error) return error(500, `Failed to insert document: ${e.message}`);
 				return error(500, 'Failed to insert document');
 			}
-
-			console.log(`Inserted document ${res.docs[0].id}:\n`, res.upsertResult);
-			set.status = 201;
-			return { msg: 'Successfully uploaded documents' };
 		},
 		{
 			body: DocumentSchema
@@ -81,16 +105,17 @@ export const api = new Elysia({ prefix: '/api' })
 	)
 	.post(
 		'/documents/bulk',
-		async ({ set, body }) => {
-			const res = await insertDocuments(body.documents);
-			if (!res) {
-				console.log('Failed to insert documents');
-				set.status = 500;
-				return;
+		async ({ set, body, error }) => {
+			try {
+				const store = await insertDocuments(body.documents);
+				console.log(`Inserted documents:\n`, store.toJSON());
+				set.status = 201;
+				return { msg: 'Successfully uploaded documents' };
+			} catch (e) {
+				console.log('Failed to insert document');
+				if (e instanceof Error) return error(500, `Failed to insert document: ${e.message}`);
+				return error(500, 'Failed to insert document');
 			}
-
-			console.log('Inserted documents:\n', res);
-			set.status = 201;
 		},
 		{
 			body: t.Object({
