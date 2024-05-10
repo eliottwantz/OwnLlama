@@ -17,7 +17,7 @@ docker run -d -p 3000:3000 \
     --add-host=host.docker.internal:host-gateway \
     --name OwnLlama \
     --restart always \
-    eliottwantz/ownllama:latest
+    ghcr.io/eliottwantz/ownllama:latest
 ```
 
 2. Open your browser and navigate to http://localhost:3000

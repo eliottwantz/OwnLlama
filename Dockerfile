@@ -19,10 +19,12 @@ RUN ls -lA
 ENV OLLAMA_URL=http://host.docker.internal:11434
 ENV QDRANT_URL=http://host.docker.internal:6333
 
-RUN cd build && bun install
+# RUN cd build && bun install
 
 # run the app
 USER bun
 EXPOSE 3000/tcp
 
-ENTRYPOINT [ "bun", "--bun", "run", ".build/index.js" ]
+CMD sleep infinity
+
+# ENTRYPOINT [ "bun", "--bun", "run", ".build/index.js" ]
