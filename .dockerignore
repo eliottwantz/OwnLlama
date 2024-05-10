@@ -1,0 +1,11 @@
+.github
+.svelte-kit
+build
+qdrant_storage
+node_modules
+.gitignore
+.dockerignore
+Dockerfile
+.prettierrc
+.prettierignore
+README.md
