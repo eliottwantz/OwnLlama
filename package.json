@@ -44,7 +44,7 @@
 		"format": "bun --bun run prettier --write .",
 		"qdrant": "docker run --rm -d --name rag-qdrant -p 6333:6333 -p 6334:6334 -v $(pwd)/qdrant_storage:/qdrant/storage qdrant/qdrant",
 		"qdrant:ui": "xdg-open http://localhost:6333/dashboard",
-		"docker:build": "docker build --pull --rm -f Dockerfile -t eliottwantz/ownllama:latest ."
+		"docker:build": "docker build --pull --rm -f Dockerfile -t ghcr.io/eliottwantz/ownllama:latest --label 'org.opencontainers.image.source=https://github.com/eliottwantz/OwnLlama' --label 'org.opencontainers.image.description=Local LLM helper using Ollama for simple prompts, web searches and asking question on your own pdfs' ."
 	},
 	"type": "module"
 }
