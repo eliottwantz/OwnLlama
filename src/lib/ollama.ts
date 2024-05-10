@@ -1,4 +1,4 @@
-import { Ollama as OllamaLLM } from '@langchain/community/llms/ollama';
+import { ChatOllama } from '@langchain/community/chat_models/ollama';
 import { Ollama } from 'ollama';
 
 export const OLLAMA_URL = process.env.OLLAMA_URL ?? 'http://127.0.0.1:11434';
@@ -16,5 +16,5 @@ export const listModels = async () => {
 };
 
 export const createOllamaLLM = (model: string = 'llama3') => {
-	return new OllamaLLM({ model, baseUrl: OLLAMA_URL });
+	return new ChatOllama({ model, baseUrl: OLLAMA_URL });
 };

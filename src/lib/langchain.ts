@@ -8,7 +8,9 @@ import {
 import { OllamaEmbeddings } from '@langchain/community/embeddings/ollama';
 import { QdrantVectorStore } from '@langchain/qdrant';
 import { createStuffDocumentsChain } from 'langchain/chains/combine_documents';
+import { createRetrievalChain } from 'langchain/chains/retrieval';
 import { Document, type DocumentInput } from 'langchain/document';
+import { pull } from 'langchain/hub';
 import { ChatPromptTemplate } from 'langchain/prompts';
 import { RunnableMap } from 'langchain/runnables';
 import { StringOutputParser } from 'langchain/schema/output_parser';
@@ -45,10 +47,7 @@ export const promptLLM = async (prompt: string, model: string = 'llama3') => {
 };
 
 export const promptLLMWithKnowledgeBase = async (question: string, model: string = 'llama3') => {
-	const retriever = await createQdrantRetriever();
-	const retrievedDocs = await retriever.invoke(question);
-
-	return await promptLLMWithKnowledge(question, retrievedDocs, model);
+	return await promptLLMWithKnowledge(question, undefined, model);
 };
 
 export const promptLLMWithDocument = async (
@@ -63,37 +62,53 @@ export const promptLLMWithDocument = async (
 
 	console.log('Document:\n', document);
 
-	return await promptLLMWithKnowledge(question, [new Document({ pageContent: document })], model);
+	return await promptLLMWithKnowledge(question, document, model);
 };
 
 const promptLLMWithKnowledge = async (
 	question: string,
-	context: Document[],
+	document?: string,
 	model: string = 'llama3'
 ) => {
 	const llm = createOllamaLLM(model);
 	const prompt = ChatPromptTemplate.fromMessages([
 		[
 			'system',
-			`You are an assistant for question-answering tasks. Answer the question based on the context only. If you don't know the answer based on the context, just say that you don't know and that you will do your research on that. Always add an emoji at the end of your answer.
+			`Answer any use questions based solely on the context below:
 
-			Context: {context}.
-			Question:`
+<context>
+{context}
+</context>`
 		],
-		['human', '{question}'],
-		['assistant', 'Answer:']
+		['human', '{input}']
 	]);
 
-	const ragChain = await createStuffDocumentsChain({
+	const documentChain = await createStuffDocumentsChain({
 		llm,
-		prompt,
-		outputParser: new StringOutputParser()
+		prompt
 	});
 
-	const response = await ragChain.invoke({
-		question,
-		context
-	});
+	let response: string;
+	if (document) {
+		console.log('Have a document');
+		response = await documentChain.invoke({
+			input: question,
+			context: [new Document({ pageContent: document })]
+		});
+	} else {
+		const retriever = await createQdrantRetriever();
+
+		const retrievalChain = await createRetrievalChain({
+			combineDocsChain: documentChain,
+			retriever
+		});
+
+		response = await retrievalChain
+			.invoke({
+				input: question
+			})
+			.then((r) => r.answer);
+	}
 
 	console.log('LLM response:\n', response);
 
