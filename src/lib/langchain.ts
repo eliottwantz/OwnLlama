@@ -1,5 +1,6 @@
 import type { Document } from '$lib/document';
-import { EMBEDDINGS_COLLECTION_NAME } from '$lib/qdrant';
+import { OLLAMA_URL } from '$lib/ollama';
+import { EMBEDDINGS_COLLECTION_NAME, QDRANT_URL } from '$lib/qdrant';
 import { OllamaEmbeddings } from '@langchain/community/embeddings/ollama';
 import { QdrantVectorStore } from '@langchain/qdrant';
 
@@ -10,9 +11,9 @@ export const insertDocuments = async (
 	const store = await QdrantVectorStore.fromTexts(
 		documents.map((d) => d.content),
 		documents.map((d) => ({ id: crypto.randomUUID(), metadata: d.metadata })),
-		new OllamaEmbeddings({ model }),
+		new OllamaEmbeddings({ model, baseUrl: OLLAMA_URL }),
 		{
-			url: process.env.QDRANT_URL,
+			url: QDRANT_URL,
 			collectionName: EMBEDDINGS_COLLECTION_NAME
 		}
 	);
@@ -22,7 +23,8 @@ export const insertDocuments = async (
 
 export const generateEmbeddings = async (documents: Document[]) => {
 	const embeddings = new OllamaEmbeddings({
-		model: 'nomic-embed-text'
+		model: 'nomic-embed-text',
+		baseUrl: OLLAMA_URL
 	});
 	const documentEmbeddings = await embeddings.embedDocuments(documents.map((d) => d.content));
 	return documentEmbeddings;

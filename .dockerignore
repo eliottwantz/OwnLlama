@@ -1,0 +1,11 @@
+node_modules/
+.svelte-kit/
+build/
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+qdrant_storage
+Dockerfile
+.prettierrc
+.prettierignore
+.README.md

@@ -1,8 +1,11 @@
-import { Ollama } from '@langchain/community/llms/ollama';
-import ollama from 'ollama';
+import { Ollama as OllamaLLM } from '@langchain/community/llms/ollama';
+import { Ollama } from 'ollama';
+
+export const OLLAMA_URL = process.env.OLLAMA_URL ?? 'http://127.0.0.1:11434';
 
 export const listModels = async () => {
-	const res = await ollama
+	const client = new Ollama({ host: OLLAMA_URL });
+	const res = await client
 		.list()
 		.then((res) => res.models)
 		.catch((e) => {
@@ -13,6 +16,6 @@ export const listModels = async () => {
 };
 
 export const promptLLM = async (prompt: string, model: string = 'llama3') => {
-	const client = new Ollama({ model });
+	const client = new OllamaLLM({ model, baseUrl: OLLAMA_URL });
 	return await client.invoke(prompt);
 };

@@ -1,38 +1,47 @@
-# create-svelte
+# OwnLlama
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+Welcome to your OwnLlama! To get started with your llama, check out the **Getting started** section.
 
-## Creating a project
+## Getting started
 
-If you're seeing this, you've probably already done this step. Congrats!
+### Prerequisites
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
+You must have [Docker](https://www.docker.com/products/docker-desktop) installed.
 
-# create a new project in my-app
-npm create svelte@latest my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+1. Create the containers
 
 ```bash
-npm run dev
+docker run --rm -d --name rag-qdrant -p 6333:6333 -p 6334:6334 -v $(pwd)/qdrant_storage:/qdrant/storage qdrant/qdrant
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+docker run -d -p 3000:3000 \
+    --add-host=host.docker.internal:host-gateway \
+    --name OwnLlama \
+    --restart always \
+    eliottwantz/ownllama:latest
 ```
 
-## Building
+2. Open your browser and navigate to http://localhost:3000
 
-To create a production version of your app:
+## Development
+
+### Prerequisites
+
+You must have [Bun](https://bun.sh/) installed.
+
+1. Clone this repo
 
 ```bash
-npm run build
+git clone https://github.com/eliottwantz/OwnLlama
 ```
 
-You can preview the production build with `npm run preview`.
+2. Create the containers
 
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+```bash
+docker run --rm -d --name rag-qdrant -p 6333:6333 -p 6334:6334 -v $(pwd)/qdrant_storage:/qdrant/storage qdrant/qdrant
+```
+
+3. Run the development server
+
+```bash
+bun run dev
+```

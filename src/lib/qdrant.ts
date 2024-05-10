@@ -1,10 +1,11 @@
 import { QdrantClient } from '@qdrant/js-client-rest';
 
 export const EMBEDDINGS_COLLECTION_NAME = 'knwoledge_base';
+export const QDRANT_URL = process.env.QDRANT_URL ?? 'http://127.0.0.1:6333';
 
 export const createQdrantClient = () => {
 	const client = new QdrantClient({
-		url: process.env.QDRANT_URL ?? 'http://127.0.0.1:6333'
+		url: QDRANT_URL
 	});
 	return client;
 };
