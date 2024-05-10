@@ -1,6 +1,11 @@
 import { DocumentSchema } from '$lib/document';
-import { generateEmbeddings, insertDocuments } from '$lib/langchain';
-import { listModels, promptLLM } from '$lib/ollama';
+import {
+	generateEmbeddings,
+	insertDocuments,
+	promptLLM,
+	promptLLMWithKnowledgeBase
+} from '$lib/langchain';
+import { listModels } from '$lib/ollama';
 import { EMBEDDINGS_COLLECTION_NAME, createQdrantClient, ensureCollection } from '$lib/qdrant';
 import cors from '@elysiajs/cors';
 import { Elysia, t } from 'elysia';
@@ -42,18 +47,17 @@ export const api = new Elysia({ prefix: '/api' })
 		'/prompt-with-knowledge',
 		async ({ body, error }) => {
 			console.log('Question from user:', body.prompt);
-			// const res = await promptLLMWithKnowledge(body.prompt, body.docId);
-			// if (!res.success) {
-			// 	console.log('Failed to prompt LLM:\n', res.error);
-			// 	return error(500, `Failed to prompt LLM: ${res.error.message}`);
-			// } else {
-			// 	console.log('LLM response:\n', res.res);
-			// 	return { answer: res.res };
-			// }
+			try {
+				const res = await promptLLMWithKnowledgeBase(body.prompt);
+				return { answer: res };
+			} catch (e) {
+				console.log('Failed to prompt LLM:\n', e);
+				if (e instanceof Error) return error(500, `Failed to prompt LLM: ${e.message}`);
+				return error(500, 'Failed to prompt LLM');
+			}
 		},
 		{
 			body: t.Object({
-				docId: t.String(),
 				prompt: t.String()
 			})
 		}
@@ -89,8 +93,8 @@ export const api = new Elysia({ prefix: '/api' })
 		'/documents',
 		async ({ set, body, error }) => {
 			try {
-				const store = await insertDocuments([body]);
-				console.log(`Inserted document:\n`, store.toJSON());
+				await insertDocuments([body]);
+				console.log(`Inserted document`);
 				set.status = 201;
 				return { msg: 'Successfully uploaded documents' };
 			} catch (e) {

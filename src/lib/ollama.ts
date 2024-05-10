@@ -15,7 +15,6 @@ export const listModels = async () => {
 	return res;
 };
 
-export const promptLLM = async (prompt: string, model: string = 'llama3') => {
-	const client = new OllamaLLM({ model, baseUrl: OLLAMA_URL });
-	return await client.invoke(prompt);
+export const createOllamaLLM = (model: string = 'llama3') => {
+	return new OllamaLLM({ model, baseUrl: OLLAMA_URL });
 };
