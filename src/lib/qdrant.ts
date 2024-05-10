@@ -47,5 +47,5 @@ export const getPoint = async (id: string) => {
 		id
 	});
 
-	return document;
+	return document.data.result;
 };

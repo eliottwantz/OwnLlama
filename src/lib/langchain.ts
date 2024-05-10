@@ -45,12 +45,37 @@ export const promptLLM = async (prompt: string, model: string = 'llama3') => {
 };
 
 export const promptLLMWithKnowledgeBase = async (question: string, model: string = 'llama3') => {
-	const llm = createOllamaLLM(model);
 	const retriever = await createQdrantRetriever();
+	const retrievedDocs = await retriever.invoke(question);
+
+	return await promptLLMWithKnowledge(question, retrievedDocs, model);
+};
+
+export const promptLLMWithDocument = async (
+	question: string,
+	docId: string,
+	model: string = 'llama3'
+) => {
+	const document = await getPoint(docId).then((d) => d?.payload?.content as string | undefined);
+	if (!document) {
+		throw new Error('Document not found');
+	}
+
+	console.log('Document:\n', document);
+
+	return await promptLLMWithKnowledge(question, [new Document({ pageContent: document })], model);
+};
+
+const promptLLMWithKnowledge = async (
+	question: string,
+	context: Document[],
+	model: string = 'llama3'
+) => {
+	const llm = createOllamaLLM(model);
 	const prompt = ChatPromptTemplate.fromMessages([
 		[
-			'ai',
-			`You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know and that you will do your research on that. Always add an emoji at the end of your answer.
+			'system',
+			`You are an assistant for question-answering tasks. Answer the question based on the context only. If you don't know the answer based on the context, just say that you don't know and that you will do your research on that. Always add an emoji at the end of your answer.
 
 			Context: {context}.
 			Question:`
@@ -65,52 +90,9 @@ export const promptLLMWithKnowledgeBase = async (question: string, model: string
 		outputParser: new StringOutputParser()
 	});
 
-	const retrievedDocs = await retriever.invoke(question);
-
 	const response = await ragChain.invoke({
 		question,
-		context: retrievedDocs
-	});
-
-	console.log('LLM response:\n', response);
-
-	return response;
-};
-
-export const promptLLMWithDocument = async (
-	question: string,
-	docId: string,
-	model: string = 'llama3'
-) => {
-	const document = await getPoint(docId).then(
-		(d) => d.data.result?.payload?.content as string | undefined
-	);
-	if (!document) {
-		throw new Error('Document not found');
-	}
-
-	const llm = createOllamaLLM(model);
-	const prompt = ChatPromptTemplate.fromMessages([
-		[
-			'ai',
-			`You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know and that you will do your research on that. Always add an emoji at the end of your answer.
-
-			Context: {context}.
-			Question:`
-		],
-		['human', '{question}'],
-		['assistant', 'Answer:']
-	]);
-
-	const chain = prompt.pipe(llm).pipe(new StringOutputParser());
-
-	const response = await chain.invoke({
-		question,
-		context: [
-			new Document({
-				pageContent: document
-			})
-		]
+		context
 	});
 
 	console.log('LLM response:\n', response);
