@@ -6,6 +6,7 @@ vite.config.ts.timestamp-*
 
 qdrant_storage
 Dockerfile
+.dockerignore
 .prettierrc
 .prettierignore
 .README.md
