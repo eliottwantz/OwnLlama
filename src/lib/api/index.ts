@@ -3,6 +3,7 @@ import {
 	generateEmbeddings,
 	insertDocuments,
 	promptLLM,
+	promptLLMWithDocument,
 	promptLLMWithKnowledgeBase
 } from '$lib/langchain';
 import { listModels } from '$lib/ollama';
@@ -59,6 +60,26 @@ export const api = new Elysia({ prefix: '/api' })
 		{
 			body: t.Object({
 				prompt: t.String()
+			})
+		}
+	)
+	.post(
+		'/prompt-with-document',
+		async ({ body, error }) => {
+			console.log('Question from user:', body.prompt);
+			try {
+				const res = await promptLLMWithDocument(body.prompt, body.docId);
+				return { answer: res };
+			} catch (e) {
+				console.log('Failed to prompt LLM:\n', e);
+				if (e instanceof Error) return error(500, `Failed to prompt LLM: ${e.message}`);
+				return error(500, 'Failed to prompt LLM');
+			}
+		},
+		{
+			body: t.Object({
+				prompt: t.String(),
+				docId: t.String()
 			})
 		}
 	)
