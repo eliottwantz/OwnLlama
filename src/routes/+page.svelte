@@ -1,63 +1,67 @@
 <script lang="ts">
-	import { client } from '$lib/api/client';
 	import type { EventHandler } from 'svelte/elements';
 
-	let content = $state('');
+	let prompt = $state('');
 	let errorMsg = $state('');
-	let successMsg = $state('');
-	let uploading = $state(false);
+	let loading = $state(false);
+	let llmResponse = $state('');
 
 	const handleSubmit: EventHandler<SubmitEvent, HTMLFormElement> = async (e) => {
 		e.preventDefault();
 
-		uploading = true;
+		loading = true;
 
-		const { data, error } = await client.documents.post({
-			content
-		});
-
-		uploading = false;
-
-		if (error) {
-			errorMsg = error.value;
-			return;
+		try {
+			const response = await fetch('/api/chat', {
+				method: 'POST',
+				body: JSON.stringify({ prompt }),
+				headers: { 'content-type': 'application/json' }
+			});
+			if (response.ok) {
+				const decoder = new TextDecoder();
+				// @ts-expect-error
+				for await (const chunk of response.body) {
+					llmResponse += decoder.decode(chunk);
+				}
+			}
+		} catch (error) {
+		} finally {
+			loading = false;
 		}
 
-		console.log('data', data);
+		// if (error) {
+		// 	errorMsg = error.value;
+		// 	setTimeout(() => (errorMsg = ''), 3000);
+		// 	return;
+		// }
 
-		content = '';
-		successMsg = data.msg;
-		setTimeout(() => (successMsg = ''), 3000);
-		console.log('Upload successful');
+		// console.log('data:\n', data);
+
+		prompt = '';
 	};
 </script>
 
-<h1 class="my-10 scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
-	rad-qdrant 🔥😁👍
-</h1>
-
 <h2 class="scroll-m-20 pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0">
-	Add a document
+	Ask a question to your OwnLlama
 </h2>
 
 {#if errorMsg}
 	<p class="mb-2 text-lg text-red-500">{errorMsg}</p>
 {/if}
-{#if successMsg}
-	<p class="mb-2 text-lg">{successMsg}</p>
+{#if llmResponse}
+	<p class="mb-2 text-lg">{llmResponse}</p>
 {/if}
-<form action="/api/documents" method="post" onsubmit={handleSubmit} class="flex flex-col gap-4">
-	<textarea
-		bind:value={content}
-		name="content"
+<form onsubmit={handleSubmit} class="flex flex-col gap-4">
+	<input
+		bind:value={prompt}
+		name="prompt"
 		class="bg-neutral-900 p-2 text-white"
-		placeholder="Enter the content of your document"
-		rows="10"
-	></textarea>
+		placeholder="Ask a question"
+	/>
 
-	<button disabled={uploading} class="self-start rounded-md bg-neutral-800 px-3 py-1">
-		{#if uploading}
-			<span>Uploading...</span>
+	<button disabled={loading} class="self-start rounded-md bg-neutral-800 px-3 py-1">
+		{#if loading}
+			<span>Loading...</span>
 		{:else}
 			<span>Submit</span>
 		{/if}

@@ -1,11 +1,13 @@
 import { DocumentSchema } from '$lib/document';
 import {
+	chatLLM,
 	generateEmbeddings,
 	insertDocuments,
 	promptLLM,
 	promptLLMWithDocument,
 	promptLLMWithKnowledgeBase
 } from '$lib/langchain';
+import { Stream } from '@elysiajs/stream';
 import { listModels } from '$lib/ollama';
 import {
 	EMBEDDINGS_COLLECTION_NAME,
@@ -71,19 +73,23 @@ export const api = new Elysia({ prefix: '/api' })
 		}
 	)
 	.post(
-		'/embed',
+		'/chat',
 		async ({ body, error }) => {
+			console.log('Question from user:', body.prompt);
 			try {
-				const res = await generateEmbeddings([body]);
-				return { embeddings: res };
+				return new Response(await chatLLM(body.prompt), {
+					headers: { 'content-type': 'text/event-stream' }
+				});
 			} catch (e) {
-				console.log('Failed to embed document:\n', e);
-				if (e instanceof Error) return error(500, `Failed to embed document: ${e.message}`);
-				return error(500, 'Failed to embed document');
+				console.log('Failed to prompt LLM:\n', e);
+				if (e instanceof Error) return error(500, `Failed to prompt LLM: ${e.message}`);
+				return error(500, 'Failed to prompt LLM');
 			}
 		},
 		{
-			body: DocumentSchema
+			body: t.Object({
+				prompt: t.String()
+			})
 		}
 	)
 	.group('/documents', (app) => {

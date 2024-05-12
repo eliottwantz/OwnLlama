@@ -11,8 +11,10 @@ import { createStuffDocumentsChain } from 'langchain/chains/combine_documents';
 import { createRetrievalChain } from 'langchain/chains/retrieval';
 import { Document, type DocumentInput } from 'langchain/document';
 import { pull } from 'langchain/hub';
+import { HttpResponseOutputParser } from 'langchain/output_parsers';
 import { ChatPromptTemplate } from 'langchain/prompts';
 import { RunnableMap } from 'langchain/runnables';
+import { HumanMessage, SystemMessage } from 'langchain/schema';
 import { StringOutputParser } from 'langchain/schema/output_parser';
 
 export const insertDocuments = async (
@@ -113,4 +115,17 @@ const promptLLMWithKnowledge = async (
 	console.log('LLM response:\n', response);
 
 	return response;
+};
+
+export const chatLLM = async (question: string, model: string = 'llama3') => {
+	// const llm = createOllamaLLM(model);
+	const llm = createOllamaLLM('phi3');
+
+	const messages = [
+		// new SystemMessage("Please try to provide useful, helpful and actionable answers."),
+		new SystemMessage("You're the best Joke Generator and have the best humor."),
+		new HumanMessage(`Tell me a joke about ${question}`)
+	];
+
+	return llm.pipe(new HttpResponseOutputParser()).stream(messages);
 };

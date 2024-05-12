@@ -4,6 +4,7 @@
   "dependencies": {
     "@elysiajs/cors": "^1.0.2",
     "@elysiajs/eden": "^1.0.13",
+    "@elysiajs/stream": "^1.0.2",
     "@elysiajs/swagger": "^1.0.5",
     "@langchain/community": "^0.0.55",
     "@langchain/core": "^0.1.62",
