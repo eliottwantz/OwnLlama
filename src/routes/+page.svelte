@@ -42,10 +42,6 @@
 	};
 </script>
 
-<h2 class="scroll-m-20 pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0">
-	Ask a question to your OwnLlama
-</h2>
-
 {#if errorMsg}
 	<p class="mb-2 text-lg text-red-500">{errorMsg}</p>
 {/if}
@@ -58,11 +54,12 @@
 	<input
 		bind:value={prompt}
 		name="prompt"
-		class="bg-neutral-900 p-2 text-white"
-		placeholder="Ask a question"
+		class="border-0 border-b border-b-white bg-inherit p-2 text-white focus:border-b-white focus:ring-0"
+		placeholder="Question"
+		autocomplete="off"
 	/>
 
-	<button disabled={loading} class="self-start rounded-md bg-neutral-800 px-3 py-1">
+	<button disabled={loading} class="self-start rounded-md px-3 py-1">
 		{#if loading}
 			<span>Loading...</span>
 		{:else}

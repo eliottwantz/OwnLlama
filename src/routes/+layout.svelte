@@ -1,12 +1,24 @@
-<script lang="ts">
+<script>
+	import ModelsDropdown from '$lib/components/ModelsDropdown.svelte';
+	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 	import '../app.css';
+	import { ModeWatcher } from 'mode-watcher';
 
 	let { children } = $props();
 </script>
 
-<div class="mx-auto max-w-screen-2xl px-8">
-	<h1 class="my-10 scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
-		OwnLlama 🔥😁👍
-	</h1>
-	{@render children()}
+<svelte:head>
+	<title>OwnLlama</title>
+</svelte:head>
+
+<ModeWatcher />
+
+<div class="min-h-svh p-1">
+	<div class="mb-2 flex items-center justify-between">
+		<ModelsDropdown />
+		<ThemeSwitcher />
+	</div>
+	<div class="mx-auto max-w-screen-lg">
+		{@render children()}
+	</div>
 </div>
