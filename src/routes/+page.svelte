@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Chat from '$lib/components/Chat.svelte';
 	import type { EventHandler } from 'svelte/elements';
 
 	let prompt = $state('');
@@ -49,7 +50,9 @@
 	<p class="mb-2 text-lg text-red-500">{errorMsg}</p>
 {/if}
 {#if llmResponse}
-	<p class="mb-2 text-lg">{llmResponse}</p>
+	<div class="mb-2 text-lg">
+		<Chat content={llmResponse} />
+	</div>
 {/if}
 <form onsubmit={handleSubmit} class="flex flex-col gap-4">
 	<input

@@ -118,13 +118,11 @@ const promptLLMWithKnowledge = async (
 };
 
 export const chatLLM = async (question: string, model: string = 'llama3') => {
-	// const llm = createOllamaLLM(model);
-	const llm = createOllamaLLM('phi3');
+	const llm = createOllamaLLM(model);
 
 	const messages = [
-		// new SystemMessage("Please try to provide useful, helpful and actionable answers."),
-		new SystemMessage("You're the best Joke Generator and have the best humor."),
-		new HumanMessage(`Tell me a joke about ${question}`)
+		new SystemMessage('Please try to provide useful, helpful and actionable answers.'),
+		new HumanMessage(question)
 	];
 
 	return llm.pipe(new HttpResponseOutputParser()).stream(messages);
