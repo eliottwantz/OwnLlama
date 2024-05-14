@@ -1,7 +1,10 @@
 <script lang="ts">
 	import Chat from '$lib/components/Chat/Chat.svelte';
 	import ModelsDropdown from '$lib/components/ModelsDropdown/ModelsDropdown.svelte';
+	import { createModelStore } from '$lib/components/ModelsDropdown/models.svelte';
 	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
+
+	createModelStore();
 </script>
 
 <main

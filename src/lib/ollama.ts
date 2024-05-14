@@ -18,3 +18,11 @@ export const listModels = async () => {
 export const createOllamaLLM = (model: string = 'llama3') => {
 	return new ChatOllama({ model, baseUrl: OLLAMA_URL });
 };
+
+export const preloadModel = async (model: string) => {
+	const client = new Ollama({ host: OLLAMA_URL });
+	await client.generate({
+		model,
+		prompt: ''
+	});
+};

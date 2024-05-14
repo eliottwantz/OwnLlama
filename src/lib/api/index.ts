@@ -1,14 +1,12 @@
 import { DocumentSchema } from '$lib/document';
 import {
 	chatLLM,
-	generateEmbeddings,
 	insertDocuments,
 	promptLLM,
 	promptLLMWithDocument,
 	promptLLMWithKnowledgeBase
 } from '$lib/langchain';
-import { Stream } from '@elysiajs/stream';
-import { listModels } from '$lib/ollama';
+import { listModels, preloadModel } from '$lib/ollama';
 import {
 	EMBEDDINGS_COLLECTION_NAME,
 	createQdrantClient,
@@ -33,6 +31,21 @@ export const api = new Elysia({ prefix: '/api' })
 			};
 		}
 		return { models: models.map((m) => m.name) };
+	})
+	.get('/ollama/preload/:model', async ({ params, error }) => {
+		const { model } = params;
+		try {
+			console.log('Preloading model:', model);
+			await preloadModel(model);
+			console.log('Preloaded model:', model);
+		} catch (e) {
+			if (e instanceof Error) {
+				console.log('Failed to preload model:\n', e);
+				return error(500, `Failed to preload model: ${e.message}`);
+			}
+			console.log('Failed to preload model with unknown error:\n', e);
+			return error(500, 'Failed to preload model');
+		}
 	})
 	.post(
 		'/prompt',
@@ -75,9 +88,9 @@ export const api = new Elysia({ prefix: '/api' })
 	.post(
 		'/chat',
 		async ({ body, error }) => {
-			console.log('Question from user:', body.prompt);
+			console.log('Question to', body.model, ' from user:', body.prompt);
 			try {
-				return new Response(await chatLLM(body.prompt), {
+				return new Response(await chatLLM(body.prompt, body.model), {
 					headers: { 'content-type': 'text/event-stream' }
 				});
 			} catch (e) {
@@ -88,7 +101,8 @@ export const api = new Elysia({ prefix: '/api' })
 		},
 		{
 			body: t.Object({
-				prompt: t.String()
+				prompt: t.String(),
+				model: t.Optional(t.String())
 			})
 		}
 	)
