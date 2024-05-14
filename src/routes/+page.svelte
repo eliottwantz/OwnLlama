@@ -8,7 +8,7 @@
 </script>
 
 <main
-	class="mx-auto flex h-full max-h-svh min-h-svh flex-col gap-3 p-2 sm:max-w-screen-md xl:max-w-screen-lg 2xl:max-w-screen-xl"
+	class="mx-auto flex h-full max-h-dvh min-h-dvh flex-col gap-3 p-2 sm:max-w-screen-md xl:max-w-screen-lg 2xl:max-w-screen-xl"
 >
 	<div class="sticky top-0 z-10 flex items-center justify-between">
 		<ModelsDropdown />

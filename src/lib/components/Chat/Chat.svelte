@@ -110,12 +110,13 @@
 				<input
 					bind:value={prompt}
 					name="prompt"
-					class="flex-1 border-none bg-inherit p-2 focus:border-none focus:outline-0 focus:ring-0"
+					class="flex-1 bg-inherit p-2 outline-none"
 					placeholder="Question to {modelStore.selectedModel}"
 					autocomplete="off"
 				/>
 
 				<Button
+					type="submit"
 					disabled={loading || !prompt.length}
 					size="icon"
 					class="h-7 w-7 rounded-full disabled:bg-neutral-600"
