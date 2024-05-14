@@ -1,8 +1,13 @@
 <script>
-	import { ModeWatcher } from 'mode-watcher';
 	import '../app.css';
 
+	import { createClient } from '$lib/api/client';
+	import { ModeWatcher } from 'mode-watcher';
+	import { browser } from '$app/environment';
+
 	let { children } = $props();
+
+	if (browser) createClient(fetch);
 </script>
 
 <svelte:head>

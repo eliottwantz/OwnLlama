@@ -3,7 +3,7 @@ import { getContext, setContext } from 'svelte';
 class ModelsStore {
 	models = $state<string[]>([]);
 	selectedModel = $state<string>('');
-	id = crypto.randomUUID();
+	id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
 	constructor() {}
 }

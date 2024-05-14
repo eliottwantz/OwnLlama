@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { client } from '$lib/api/client';
+	import { getApiClient } from '$lib/api/client';
 	import { useModelStore } from '$lib/components/ModelsDropdown/models.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import * as Command from '$lib/components/ui/command';
@@ -42,8 +42,9 @@
 			return;
 		}
 		console.log('Preloading model:', selectedValue);
-		client.ollama
-			.preload({ model: selectedValue })
+
+		getApiClient()
+			.ollama.preload({ model: selectedValue })
 			.get()
 			.then((res) => {
 				if (res.error) {
@@ -60,7 +61,7 @@
 	});
 
 	const fetchModels = async () => {
-		const { data, error } = await client.models.get();
+		const { data, error } = await getApiClient().models.get();
 		if (error) {
 			console.log('Failed to get models:\n', error);
 			return;
