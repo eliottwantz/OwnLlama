@@ -5,7 +5,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { ArrowDown, ChevronRight, LoaderCircle } from 'lucide-svelte';
 	import { tick } from 'svelte';
-	import type { EventHandler } from 'svelte/elements';
+	import type { EventHandler, FormEventHandler, KeyboardEventHandler } from 'svelte/elements';
 
 	let prompt = $state('');
 	let errorMsg = $state('');
@@ -16,7 +16,8 @@
 	let modelStore = useModelStore();
 
 	let chatMessagesEl = $state<HTMLDivElement>();
-	let inputEl = $state<HTMLInputElement>();
+	let inputEl = $state<HTMLTextAreaElement>();
+	let formEl = $state<HTMLFormElement>();
 
 	$effect(() => {
 		scrollToBottom();
@@ -35,6 +36,7 @@
 		await tick();
 
 		scrollToBottom();
+		handleResize();
 
 		if (!chatHistory.latestChat) return;
 
@@ -74,6 +76,17 @@
 			chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 		}
 	};
+
+	const handleResize = () => {
+		if (!inputEl) return;
+		inputEl.style.height = 'auto';
+		inputEl.style.height = `${inputEl.scrollHeight}px`;
+	};
+	const handleCtrlEnter: KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
+		if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+			formEl?.requestSubmit();
+		}
+	};
 </script>
 
 <div class="flex flex-1 flex-col gap-y-2 overflow-hidden">
@@ -108,24 +121,29 @@
 				</Button>
 			</div>
 		{/if}
-		<form onsubmit={handleSubmit} class="flex flex-col">
+		<form bind:this={formEl} onsubmit={handleSubmit} class="flex flex-col">
 			<div class="flex items-center border-b border-b-foreground">
 				{#if modelStore.isPreloading}
 					<div>
 						<LoaderCircle class="h-5 w-5 animate-spin" />
 					</div>
 				{/if}
-				<input
+				<textarea
 					bind:value={prompt}
 					bind:this={inputEl}
+					oninput={handleResize}
+					onkeydown={handleCtrlEnter}
 					disabled={loading || modelStore.isPreloading}
 					name="prompt"
-					class="flex-1 bg-inherit p-2 outline-none"
+					class="flex-1 resize-none overflow-hidden bg-inherit p-2 outline-none"
 					placeholder={modelStore.isPreloading
 						? `Loading model ${modelStore.selectedModel}...`
 						: `Question to ${modelStore.selectedModel}`}
 					autocomplete="off"
-				/>
+					tabindex="0"
+					dir="auto"
+					rows="1"
+				></textarea>
 
 				<Button
 					type="submit"
