@@ -16,6 +16,7 @@
 	let modelStore = useModelStore();
 
 	let chatMessagesEl = $state<HTMLDivElement>();
+	let inputEl = $state<HTMLInputElement>();
 
 	$effect(() => {
 		scrollToBottom();
@@ -60,6 +61,8 @@
 			}
 		} finally {
 			loading = false;
+			await tick();
+			inputEl?.focus();
 		}
 
 		prompt = '';
@@ -114,6 +117,7 @@
 				{/if}
 				<input
 					bind:value={prompt}
+					bind:this={inputEl}
 					disabled={loading || modelStore.isPreloading}
 					name="prompt"
 					class="flex-1 bg-inherit p-2 outline-none"
