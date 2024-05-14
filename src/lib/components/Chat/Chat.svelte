@@ -3,7 +3,7 @@
 	import { useChatHistory } from '$lib/components/Chat/chat.svelte';
 	import { useModelStore } from '$lib/components/ModelsDropdown/models.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { ArrowDown, ChevronRight } from 'lucide-svelte';
+	import { ArrowDown, ChevronRight, LoaderCircle } from 'lucide-svelte';
 	import { tick } from 'svelte';
 	import type { EventHandler } from 'svelte/elements';
 
@@ -107,17 +107,25 @@
 		{/if}
 		<form onsubmit={handleSubmit} class="flex flex-col">
 			<div class="flex items-center border-b border-b-foreground">
+				{#if modelStore.isPreloading}
+					<div>
+						<LoaderCircle class="h-5 w-5 animate-spin" />
+					</div>
+				{/if}
 				<input
 					bind:value={prompt}
+					disabled={loading || modelStore.isPreloading}
 					name="prompt"
 					class="flex-1 bg-inherit p-2 outline-none"
-					placeholder="Question to {modelStore.selectedModel}"
+					placeholder={modelStore.isPreloading
+						? `Loading model ${modelStore.selectedModel}...`
+						: `Question to ${modelStore.selectedModel}`}
 					autocomplete="off"
 				/>
 
 				<Button
 					type="submit"
-					disabled={loading || !prompt.length}
+					disabled={loading || !prompt.length || modelStore.isPreloading}
 					size="icon"
 					class="h-7 w-7 rounded-full disabled:bg-neutral-600"
 				>

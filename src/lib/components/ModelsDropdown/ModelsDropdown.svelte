@@ -43,6 +43,7 @@
 		}
 		console.log('Preloading model:', selectedValue);
 
+		modelsStore.isPreloading = true;
 		getApiClient()
 			.ollama.preload({ model: selectedValue })
 			.get()
@@ -57,6 +58,9 @@
 			.catch((err) => {
 				console.log('Failed to preload model:\n', err);
 				return;
+			})
+			.finally(() => {
+				modelsStore.isPreloading = false;
 			});
 	});
 

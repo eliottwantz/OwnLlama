@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ChatMessage } from '$lib/components/Chat/chat.svelte';
+	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { marked, type TokensList } from 'marked';
 
 	let { message }: { message: ChatMessage } = $props();
@@ -31,6 +32,30 @@
 						breaks: true
 					})}
 				{/each}
+			</div>
+		</div>
+	{:else}
+		<div>
+			<div class="mb-2 flex items-baseline gap-x-1">
+				<span class="font-bold">{message.model}</span>
+				<span class="hidden text-sm text-muted-foreground">
+					{new Date(message.timestamp).toLocaleString()}
+				</span>
+			</div>
+			<div class="flex flex-col gap-y-2">
+				<div class="flex gap-x-3">
+					<Skeleton class="h-[10px] w-[80%] rounded-full" />
+					<Skeleton class="h-[10px] w-[20%] rounded-full" />
+				</div>
+				<div class="flex gap-x-3">
+					<Skeleton class="h-[10px] w-[30%] rounded-full" />
+					<Skeleton class="h-[10px] w-[40%] rounded-full" />
+					<Skeleton class="h-[10px] w-[30%] rounded-full" />
+				</div>
+				<div class="flex gap-x-3">
+					<Skeleton class="h-[10px] w-[20%] rounded-full" />
+					<Skeleton class="h-[10px] w-[80%] rounded-full" />
+				</div>
 			</div>
 		</div>
 	{/if}
@@ -68,5 +93,8 @@
 	}
 	:global(table) {
 		@apply my-3;
+	}
+	:global(pre) {
+		@apply !whitespace-pre-wrap !break-words;
 	}
 </style>

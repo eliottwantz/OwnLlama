@@ -3,7 +3,7 @@ import { getContext, setContext } from 'svelte';
 class ModelsStore {
 	models = $state<string[]>([]);
 	selectedModel = $state<string>('');
-	id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+	isPreloading = $state(false);
 
 	constructor() {}
 }
@@ -11,7 +11,6 @@ class ModelsStore {
 export const createModelStore = () => {
 	const modelStore = new ModelsStore();
 	setContext('modelStore', modelStore);
-	console.log('Created new modelStore with id', modelStore.id);
 	return modelStore;
 };
 
