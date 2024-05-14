@@ -7,14 +7,27 @@
 	import { cn } from '$lib/utils.js';
 	import { tick } from 'svelte';
 	import { client } from '$lib/api/client';
+	import { useModelStore } from '$lib/components/ModelsDropdown/models.svelte';
 
-	let models = $state<string[]>([]);
+	let modelsStore = useModelStore();
 	let open = $state(false);
-	let value = $state('');
-	let selectedValue = $derived(models.find((m) => m === value) ?? 'Select a model...');
+	let searchValue = $state('');
+	let selectedValue = $derived(
+		modelsStore.models.find((m) => m === searchValue) ?? 'Select a model...'
+	);
+
+	$inspect(selectedValue);
 
 	$effect(() => {
 		fetchModels();
+	});
+
+	$effect(() => {
+		const selectedModel = localStorage.getItem('model');
+		console.log('Selected model:', selectedModel);
+		if (selectedModel) {
+			searchValue = selectedModel;
+		}
 	});
 
 	const fetchModels = async () => {
@@ -29,7 +42,7 @@
 			return;
 		}
 
-		models = data.models;
+		modelsStore.models = data.models;
 	};
 
 	const closeAndFocusTrigger = (triggerId: string) => {
@@ -58,15 +71,16 @@
 			<Command.Input placeholder="Search model..." />
 			<Command.Empty>No model found.</Command.Empty>
 			<Command.Group>
-				{#each models as model}
+				{#each modelsStore.models as model}
 					<Command.Item
 						value={model}
 						onSelect={(currentValue) => {
-							value = currentValue;
+							searchValue = currentValue;
+							localStorage.setItem('model', searchValue);
 							closeAndFocusTrigger(ids.trigger);
 						}}
 					>
-						<Check class={cn('mr-2 h-4 w-4', value !== model && 'text-transparent')} />
+						<Check class={cn('mr-2 h-4 w-4', searchValue !== model && 'text-transparent')} />
 						{model}
 					</Command.Item>
 				{/each}
