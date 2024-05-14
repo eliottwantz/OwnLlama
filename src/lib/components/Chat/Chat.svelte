@@ -24,8 +24,6 @@
 	const handleSubmit: EventHandler<SubmitEvent, HTMLFormElement> = async (e) => {
 		e.preventDefault();
 
-		if (!chatHistory.latestChat) return;
-
 		loading = true;
 
 		chatHistory.addQuestion(prompt, modelStore.selectedModel);
@@ -36,6 +34,8 @@
 		await tick();
 
 		scrollToBottom();
+
+		if (!chatHistory.latestChat) return;
 
 		try {
 			const response = await fetch('/api/chat', {
