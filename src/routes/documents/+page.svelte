@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getApiClient } from '$lib/api/client';
+	import { setAPIClient } from '$lib/api/client';
 	import type { EventHandler } from 'svelte/elements';
 
 	let content = $state('');
@@ -12,7 +12,7 @@
 
 		uploading = true;
 
-		const { data, error } = await getApiClient().documents.index.post({ pageContent: content });
+		const { data, error } = await setAPIClient().documents.index.post({ pageContent: content });
 
 		uploading = false;
 

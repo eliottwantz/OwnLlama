@@ -10,18 +10,16 @@ import { QdrantVectorStore } from '@langchain/qdrant';
 import { createStuffDocumentsChain } from 'langchain/chains/combine_documents';
 import { createRetrievalChain } from 'langchain/chains/retrieval';
 import { Document, type DocumentInput } from 'langchain/document';
-import { pull } from 'langchain/hub';
+import { PDFLoader } from 'langchain/document_loaders/fs/pdf';
 import { HttpResponseOutputParser } from 'langchain/output_parsers';
 import { ChatPromptTemplate } from 'langchain/prompts';
-import { RunnableMap } from 'langchain/runnables';
 import { HumanMessage, SystemMessage } from 'langchain/schema';
-import { StringOutputParser } from 'langchain/schema/output_parser';
 
 export const insertDocuments = async (
 	documents: DocumentInput[],
 	model: string = 'nomic-embed-text'
 ) => {
-	const store = await QdrantVectorStore.fromTexts(
+	await QdrantVectorStore.fromTexts(
 		documents.map((d) => d.pageContent),
 		documents.map((d) => ({ metadata: d.metadata })),
 		new OllamaEmbeddings({ model, baseUrl: OLLAMA_URL }),
@@ -30,8 +28,18 @@ export const insertDocuments = async (
 			collectionName: EMBEDDINGS_COLLECTION_NAME
 		}
 	);
+};
 
-	return store;
+export const insertPDF = async (file: Blob) => {
+	const loader = new PDFLoader(file, {
+		splitPages: false
+	});
+
+	const docs = await loader.load();
+
+	await insertDocuments(docs);
+
+	return docs;
 };
 
 export const generateEmbeddings = async (documents: DocumentInput[]) => {

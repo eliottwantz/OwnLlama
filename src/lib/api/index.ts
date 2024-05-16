@@ -2,6 +2,7 @@ import { DocumentSchema } from '$lib/document';
 import {
 	chatLLM,
 	insertDocuments,
+	insertPDF,
 	promptLLM,
 	promptLLMWithDocument,
 	promptLLMWithKnowledgeBase
@@ -158,28 +159,9 @@ export const api = new Elysia({ prefix: '/api' })
 				'/',
 				async ({ set, body, error }) => {
 					try {
-						await insertDocuments([body]);
-						console.log(`Inserted document`);
+						const docs = await insertPDF(body.file);
 						set.status = 201;
-						return { msg: 'Successfully uploaded documents' };
-					} catch (e) {
-						console.log('Failed to insert document');
-						if (e instanceof Error) return error(500, `Failed to insert document: ${e.message}`);
-						return error(500, 'Failed to insert document');
-					}
-				},
-				{
-					body: DocumentSchema
-				}
-			)
-			.post(
-				'/bulk',
-				async ({ set, body, error }) => {
-					try {
-						const store = await insertDocuments(body.documents);
-						console.log(`Inserted documents:\n`, store.toJSON());
-						set.status = 201;
-						return { msg: 'Successfully uploaded documents' };
+						return { msg: 'Successfully uploaded document', docs };
 					} catch (e) {
 						console.log('Failed to insert document');
 						if (e instanceof Error) return error(500, `Failed to insert document: ${e.message}`);
@@ -188,7 +170,7 @@ export const api = new Elysia({ prefix: '/api' })
 				},
 				{
 					body: t.Object({
-						documents: t.Array(DocumentSchema)
+						file: t.File()
 					})
 				}
 			);
