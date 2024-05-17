@@ -1,6 +1,7 @@
 import { DocumentSchema } from '$lib/document';
 import {
 	chatLLM,
+	chatLLMUsingDocument,
 	insertDocuments,
 	insertPDF,
 	promptLLM,
@@ -12,7 +13,8 @@ import {
 	EMBEDDINGS_COLLECTION_NAME,
 	createQdrantClient,
 	ensureCollection,
-	getPoint
+	getPoint,
+	listDocuments
 } from '$lib/qdrant';
 import cors from '@elysiajs/cors';
 import swagger from '@elysiajs/swagger';
@@ -109,17 +111,31 @@ export const api = new Elysia({ prefix: '/api' })
 	)
 	.group('/documents', (app) => {
 		return app
-			.get('/', async ({ error }) => {
-				const client = createQdrantClient();
-				try {
-					const documents = await client.getCollection(EMBEDDINGS_COLLECTION_NAME);
-					return documents;
-				} catch (e) {
-					console.log('Failed to get documents:\n', e);
-					if (e instanceof Error) return error(500, `Failed to get documents: ${e.message}`);
-					return error(500, 'Failed to get documents');
+			.get(
+				'/',
+				async ({ error }) => {
+					try {
+						const documents = await listDocuments();
+						if (!documents) {
+							return error(500, { message: 'Failed to get documents' });
+						}
+						if (!documents.length) {
+							return error(404, { message: 'No documents found' });
+						}
+						return { documents };
+					} catch (e) {
+						console.log('Failed to get documents:\n', e);
+						if (e instanceof Error)
+							return error(500, { message: `Failed to get documents: ${e.message}` });
+						return error(500, { message: 'Failed to get documents' });
+					}
+				},
+				{
+					detail: {
+						description: 'List all documents'
+					}
 				}
-			})
+			)
 			.get('/:id', async ({ params, error }) => {
 				const { id } = params;
 
@@ -136,13 +152,14 @@ export const api = new Elysia({ prefix: '/api' })
 				}
 			})
 			.post(
-				'/:id/prompt',
+				'/:id/chat',
 				async ({ body, error, params }) => {
 					const { id } = params;
-					console.log('Question from user:', body.prompt);
+					console.log('Question to', body.model, ' from user:', body.prompt);
 					try {
-						const res = await promptLLMWithDocument(body.prompt, id);
-						return { answer: res };
+						return new Response(await chatLLMUsingDocument(body.prompt, id, body.model), {
+							headers: { 'content-type': 'text/event-stream' }
+						});
 					} catch (e) {
 						console.log('Failed to prompt LLM:\n', e);
 						if (e instanceof Error) return error(500, `Failed to prompt LLM: ${e.message}`);
@@ -151,7 +168,8 @@ export const api = new Elysia({ prefix: '/api' })
 				},
 				{
 					body: t.Object({
-						prompt: t.String()
+						prompt: t.String(),
+						model: t.Optional(t.String())
 					})
 				}
 			)
@@ -159,7 +177,7 @@ export const api = new Elysia({ prefix: '/api' })
 				'/',
 				async ({ set, body, error }) => {
 					try {
-						const docs = await insertPDF(body.file);
+						const docs = await insertPDF(body.file, body.file.name);
 						set.status = 201;
 						return { msg: 'Successfully uploaded document', docs };
 					} catch (e) {

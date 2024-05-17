@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { goto, invalidateAll } from '$app/navigation';
 	import { useApiClient } from '$lib/api/client';
 	import ChatMessage from '$lib/components/Chat/ChatMessage.svelte';
 	import { useChatHistory } from '$lib/components/Chat/chat.svelte';
+	import { useKnowledgeBaseStore } from '$lib/components/KnowledgeBase/knowledgebase.svelte';
 	import { useModelStore } from '$lib/components/ModelsDropdown/models.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { ArrowDown, ChevronRight, FilePlus, LoaderCircle } from 'lucide-svelte';
@@ -16,6 +18,7 @@
 
 	let chatHistory = useChatHistory();
 	let modelStore = useModelStore();
+	let knowledgeBaseStore = useKnowledgeBaseStore();
 
 	let chatMessagesEl = $state<HTMLDivElement>();
 	let inputEl = $state<HTMLTextAreaElement>();
@@ -31,7 +34,11 @@
 
 		loading = true;
 
-		chatHistory.addQuestion(prompt, modelStore.selectedModel);
+		chatHistory.addQuestion(
+			prompt,
+			modelStore.selectedModel,
+			knowledgeBaseStore.selectedDocument?.id
+		);
 
 		const question = prompt;
 		prompt = '';
@@ -44,11 +51,21 @@
 		if (!chatHistory.latestChat) return;
 
 		try {
-			const response = await fetch('/api/chat', {
-				method: 'POST',
-				body: JSON.stringify({ prompt: question, model: modelStore.selectedModel }),
-				headers: { 'content-type': 'application/json' }
-			});
+			let response: Response;
+			if (knowledgeBaseStore.selectedDocument) {
+				response = await fetch(`/api/documents/${knowledgeBaseStore.selectedDocument.id}/chat`, {
+					method: 'POST',
+					body: JSON.stringify({ prompt: question, model: modelStore.selectedModel }),
+					headers: { 'content-type': 'application/json' }
+				});
+			} else {
+				response = await fetch('/api/chat', {
+					method: 'POST',
+					body: JSON.stringify({ prompt: question, model: modelStore.selectedModel }),
+					headers: { 'content-type': 'application/json' }
+				});
+			}
+
 			if (response.ok) {
 				const decoder = new TextDecoder();
 				// @ts-expect-error
@@ -104,6 +121,7 @@
 		}
 
 		await uploadDocument(file);
+		await goto('/');
 	};
 
 	const uploadDocument = async (file: File) => {

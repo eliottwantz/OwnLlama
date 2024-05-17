@@ -49,3 +49,20 @@ export const getPoint = async (id: string) => {
 
 	return document.data.result;
 };
+
+export const listDocuments = async () => {
+	const qdrant = createQdrantClient();
+
+	const res = await qdrant.api('points').scrollPoints({
+		collection_name: EMBEDDINGS_COLLECTION_NAME,
+		with_payload: true,
+		with_vector: false
+	});
+
+	if (!res.ok) {
+		console.log('Failed to list documents:', res.status);
+		return;
+	}
+
+	return res.data.result?.points;
+};

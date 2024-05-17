@@ -15,13 +15,18 @@ import { HttpResponseOutputParser } from 'langchain/output_parsers';
 import { ChatPromptTemplate } from 'langchain/prompts';
 import { HumanMessage, SystemMessage } from 'langchain/schema';
 
+export type DocumentMetadata = DocumentInput['metadata'] & {
+	title: string;
+	createdAt: string;
+};
+
 export const insertDocuments = async (
 	documents: DocumentInput[],
 	model: string = 'nomic-embed-text'
 ) => {
 	await QdrantVectorStore.fromTexts(
 		documents.map((d) => d.pageContent),
-		documents.map((d) => ({ metadata: d.metadata })),
+		documents.map((d) => ({ ...d.metadata, createdAt: new Date().toISOString() })),
 		new OllamaEmbeddings({ model, baseUrl: OLLAMA_URL }),
 		{
 			url: QDRANT_URL,
@@ -30,25 +35,17 @@ export const insertDocuments = async (
 	);
 };
 
-export const insertPDF = async (file: Blob) => {
+export const insertPDF = async (file: Blob, title: string) => {
 	const loader = new PDFLoader(file, {
 		splitPages: false
 	});
 
 	const docs = await loader.load();
+	docs[0].metadata.title = title;
 
 	await insertDocuments(docs);
 
 	return docs;
-};
-
-export const generateEmbeddings = async (documents: DocumentInput[]) => {
-	const embeddings = new OllamaEmbeddings({
-		model: 'nomic-embed-text',
-		baseUrl: OLLAMA_URL
-	});
-	const documentEmbeddings = await embeddings.embedDocuments(documents.map((d) => d.pageContent));
-	return documentEmbeddings;
 };
 
 export const promptLLM = async (prompt: string, model: string = 'llama3') => {
@@ -130,6 +127,33 @@ export const chatLLM = async (question: string, model: string = 'llama3') => {
 
 	const messages = [
 		new SystemMessage('Please try to provide useful, helpful and actionable answers.'),
+		new HumanMessage(question)
+	];
+
+	return llm.pipe(new HttpResponseOutputParser()).stream(messages);
+};
+
+export const chatLLMUsingDocument = async (
+	question: string,
+	documentId: string,
+	model: string = 'llama3'
+) => {
+	const document = await getPoint(documentId).then(
+		(d) => d?.payload as { content: string; metadata: DocumentMetadata }
+	);
+	if (!document) {
+		throw new Error('Document not found');
+	}
+
+	console.log('Have a document');
+
+	const llm = createOllamaLLM(model);
+	const messages = [
+		new SystemMessage(`Please try to provide useful, helpful and actionable answers. Answer the questions based solely on the context below:
+
+		<context>
+		${document.content}
+		</context>`),
 		new HumanMessage(question)
 	];
 

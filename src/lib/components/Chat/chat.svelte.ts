@@ -2,6 +2,7 @@ export type ChatMessage = {
 	question: string;
 	answer: string;
 	model: string;
+	documentId?: string;
 	timestamp: Date;
 };
 
@@ -12,8 +13,8 @@ class ChatStore {
 
 	constructor() {}
 
-	addQuestion(question: string, model: string) {
-		this.messages.push({ question, answer: '', model, timestamp: new Date() });
+	addQuestion(question: string, model: string, documentId?: string) {
+		this.messages.push({ question, answer: '', model, timestamp: new Date(), documentId });
 	}
 }
 
