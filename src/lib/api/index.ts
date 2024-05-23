@@ -1,22 +1,15 @@
-import { DocumentSchema } from '$lib/document';
 import {
 	chatLLM,
 	chatLLMUsingDocument,
-	insertDocuments,
 	insertPDF,
 	promptLLM,
-	promptLLMWithDocument,
-	promptLLMWithKnowledgeBase
+	promptLLMWithKnowledgeBase,
+	type ChatResponse
 } from '$lib/langchain';
 import { listModels, preloadModel } from '$lib/ollama';
-import {
-	EMBEDDINGS_COLLECTION_NAME,
-	createQdrantClient,
-	ensureCollection,
-	getPoint,
-	listDocuments
-} from '$lib/qdrant';
+import { ensureCollection, getPoint, listDocuments } from '$lib/qdrant';
 import cors from '@elysiajs/cors';
+import { Stream } from '@elysiajs/stream';
 import swagger from '@elysiajs/swagger';
 import { Elysia, t } from 'elysia';
 
@@ -93,9 +86,21 @@ export const api = new Elysia({ prefix: '/api' })
 		async ({ body, error }) => {
 			console.log('Question to', body.model, ' from user:', body.prompt);
 			try {
-				return new Response(await chatLLM(body.prompt, body.model), {
-					headers: { 'content-type': 'text/event-stream' }
+				const res = await chatLLM(body.prompt, body.model);
+				return new Stream(async (stream) => {
+					for await (const content of res) {
+						stream.send({ content });
+					}
+
+					stream.close();
+					console.log('Chat stream closed');
 				});
+
+				// for await (const chunk of res) {
+				// 	console.log(chunk);
+				// }
+				// console.log('Chat stream closed');
+				// return 'OK';
 			} catch (e) {
 				console.log('Failed to prompt LLM:\n', e);
 				if (e instanceof Error) return error(500, `Failed to prompt LLM: ${e.message}`);
@@ -157,8 +162,14 @@ export const api = new Elysia({ prefix: '/api' })
 					const { id } = params;
 					console.log('Question to', body.model, ' from user:', body.prompt);
 					try {
-						return new Response(await chatLLMUsingDocument(body.prompt, id, body.model), {
-							headers: { 'content-type': 'text/event-stream' }
+						const res = await chatLLMUsingDocument(body.prompt, id, body.model);
+						return new Stream(async (stream) => {
+							for await (const content of res) {
+								stream.send({ content });
+							}
+
+							stream.close();
+							console.log('Chat stream closed');
 						});
 					} catch (e) {
 						console.log('Failed to prompt LLM:\n', e);

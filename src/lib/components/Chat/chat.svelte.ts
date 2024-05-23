@@ -7,14 +7,7 @@ export type ChatMessage = {
 };
 
 class ChatStore {
-	messages = $state<ChatMessage[]>([
-		{
-			answer: `Hello there! How can I assist you today? Whether it's answering questions or providing guidance on a specific topic, I'm here to help. Just let me know what you need.\nBonus: Remember that seeking knowledge is the first step towards growth and understanding; don't hesitate to ask anything!`,
-			model: 'phi3',
-			question: 'Hi',
-			timestamp: new Date()
-		}
-	]);
+	messages = $state<ChatMessage[]>([]);
 
 	latestChat = $derived(this.messages.at(-1));
 

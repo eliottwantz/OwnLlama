@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { goto, invalidateAll } from '$app/navigation';
 	import { useApiClient } from '$lib/api/client';
 	import ChatMessage from '$lib/components/Chat/ChatMessage.svelte';
 	import { useChatHistory } from '$lib/components/Chat/chat.svelte';
 	import { useKnowledgeBaseStore } from '$lib/components/KnowledgeBase/knowledgebase.svelte';
 	import { useModelStore } from '$lib/components/ModelsDropdown/models.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { splitStream } from '$lib/utils';
 	import { ArrowDown, ChevronRight, FilePlus, LoaderCircle } from 'lucide-svelte';
 	import { tick } from 'svelte';
 	import type { ChangeEventHandler, EventHandler, KeyboardEventHandler } from 'svelte/elements';
@@ -52,43 +52,51 @@
 
 		try {
 			let response: Response;
+			let controller = new AbortController();
 			if (knowledgeBaseStore.selectedDocument) {
 				response = await fetch(`/api/documents/${knowledgeBaseStore.selectedDocument.id}/chat`, {
 					method: 'POST',
 					body: JSON.stringify({ prompt: question, model: modelStore.selectedModel }),
-					headers: { 'content-type': 'application/json' }
+					headers: { 'content-type': 'application/json' },
+					signal: controller.signal
 				});
 			} else {
 				response = await fetch('/api/chat', {
 					method: 'POST',
 					body: JSON.stringify({ prompt: question, model: modelStore.selectedModel }),
-					headers: { 'content-type': 'application/json' }
+					headers: { 'content-type': 'application/json' },
+					signal: controller.signal
 				});
 			}
 
-			if (response.ok) {
-				const reader = response.body?.getReader();
-				if (!reader) return;
+			if (!response.ok) {
+				loading = false;
+				errorMsg = 'Failed to fetch response';
+				console.log('Failed to fetch response:', response.status);
+				return;
+			}
 
-				const decoder = new TextDecoder();
+			const reader = response.body
+				?.pipeThrough(new TextDecoderStream())
+				.pipeThrough(splitStream('\n'))
+				.getReader();
+			if (!reader) return;
 
-				while (true) {
-					const { done, value } = await reader.read();
-					if (done) break;
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
 
-					const msg = decoder.decode(value);
-					console.log('Response chunk:');
-					console.log(msg, '\n');
-					const parts = msg.split('\n');
+				if (!value) continue;
 
-					for (const part of parts) {
-						const dataParts = part.split('"');
-						if (dataParts.length !== 3) continue;
-						console.log(dataParts);
-						const final = JSON.parse(`"${dataParts[1]}"`);
-						chatHistory.latestChat.answer += final;
-						if (autoScroll) scrollToBottom();
-					}
+				const lines = value.split('\n');
+
+				for (const line of lines) {
+					if (line === '') continue;
+					if (!line.startsWith('data: ')) continue;
+
+					const data = JSON.parse(line.split('data: ')[1]) as { content: string };
+					chatHistory.latestChat.answer += data.content;
+					if (autoScroll) scrollToBottom();
 				}
 			}
 		} catch (error) {

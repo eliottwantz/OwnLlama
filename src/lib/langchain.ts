@@ -8,7 +8,8 @@ import {
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
 import { OllamaEmbeddings } from '@langchain/community/embeddings/ollama';
 import { Document, type DocumentInput } from '@langchain/core/documents';
-import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { HumanMessage, SystemMessage, type MessageContent } from '@langchain/core/messages';
+import { StringOutputParser } from '@langchain/core/output_parsers';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { QdrantVectorStore } from '@langchain/qdrant';
 import { createStuffDocumentsChain } from 'langchain/chains/combine_documents';
@@ -18,6 +19,10 @@ import { HttpResponseOutputParser } from 'langchain/output_parsers';
 export type DocumentMetadata = DocumentInput['metadata'] & {
 	title: string;
 	createdAt: string;
+};
+
+export type ChatResponse = {
+	content: MessageContent;
 };
 
 export const insertDocuments = async (
@@ -130,13 +135,7 @@ export const chatLLM = async (question: string, model: string = 'llama3') => {
 		new HumanMessage(question)
 	];
 
-	return llm
-		.pipe(
-			new HttpResponseOutputParser({
-				contentType: 'text/event-stream'
-			})
-		)
-		.stream(messages);
+	return llm.pipe(new StringOutputParser()).stream(messages);
 };
 
 export const chatLLMUsingDocument = async (
@@ -163,11 +162,5 @@ export const chatLLMUsingDocument = async (
 		new HumanMessage(question)
 	];
 
-	return llm
-		.pipe(
-			new HttpResponseOutputParser({
-				contentType: 'text/event-stream'
-			})
-		)
-		.stream(messages);
+	return llm.pipe(new StringOutputParser()).stream(messages);
 };
