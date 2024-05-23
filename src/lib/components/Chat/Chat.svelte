@@ -121,7 +121,8 @@
 		}
 
 		await uploadDocument(file);
-		await goto('/');
+		alert('Document uploaded!');
+		window.location.reload();
 	};
 
 	const uploadDocument = async (file: File) => {
