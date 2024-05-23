@@ -67,11 +67,28 @@
 			}
 
 			if (response.ok) {
+				const reader = response.body?.getReader();
+				if (!reader) return;
+
 				const decoder = new TextDecoder();
-				// @ts-expect-error
-				for await (const chunk of response.body) {
-					chatHistory.latestChat.answer += decoder.decode(chunk);
-					if (autoScroll) scrollToBottom();
+
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
+
+					const msg = decoder.decode(value);
+					console.log('Response chunk:');
+					console.log(msg, '\n');
+					const parts = msg.split('\n');
+
+					for (const part of parts) {
+						const dataParts = part.split('"');
+						if (dataParts.length !== 3) continue;
+						console.log(dataParts);
+						const final = JSON.parse(`"${dataParts[1]}"`);
+						chatHistory.latestChat.answer += final;
+						if (autoScroll) scrollToBottom();
+					}
 				}
 			}
 		} catch (error) {

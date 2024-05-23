@@ -130,7 +130,13 @@ export const chatLLM = async (question: string, model: string = 'llama3') => {
 		new HumanMessage(question)
 	];
 
-	return llm.pipe(new HttpResponseOutputParser()).stream(messages);
+	return llm
+		.pipe(
+			new HttpResponseOutputParser({
+				contentType: 'text/event-stream'
+			})
+		)
+		.stream(messages);
 };
 
 export const chatLLMUsingDocument = async (
@@ -157,5 +163,11 @@ export const chatLLMUsingDocument = async (
 		new HumanMessage(question)
 	];
 
-	return llm.pipe(new HttpResponseOutputParser()).stream(messages);
+	return llm
+		.pipe(
+			new HttpResponseOutputParser({
+				contentType: 'text/event-stream'
+			})
+		)
+		.stream(messages);
 };
