@@ -5,15 +5,15 @@ import {
 	createQdrantRetriever,
 	getPoint
 } from '$lib/qdrant';
+import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
 import { OllamaEmbeddings } from '@langchain/community/embeddings/ollama';
+import { Document, type DocumentInput } from '@langchain/core/documents';
+import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { QdrantVectorStore } from '@langchain/qdrant';
 import { createStuffDocumentsChain } from 'langchain/chains/combine_documents';
 import { createRetrievalChain } from 'langchain/chains/retrieval';
-import { Document, type DocumentInput } from 'langchain/document';
-import { PDFLoader } from 'langchain/document_loaders/fs/pdf';
 import { HttpResponseOutputParser } from 'langchain/output_parsers';
-import { ChatPromptTemplate } from 'langchain/prompts';
-import { HumanMessage, SystemMessage } from 'langchain/schema';
 
 export type DocumentMetadata = DocumentInput['metadata'] & {
 	title: string;

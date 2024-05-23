@@ -1,7 +1,7 @@
 import { OLLAMA_URL } from '$lib/ollama';
+import { OllamaEmbeddings } from '@langchain/community/embeddings/ollama';
 import { QdrantVectorStore } from '@langchain/qdrant';
 import { QdrantClient } from '@qdrant/js-client-rest';
-import { OllamaEmbeddings } from 'langchain/embeddings/ollama';
 
 export const EMBEDDINGS_COLLECTION_NAME = 'knwoledge_base';
 export const QDRANT_URL = process.env.QDRANT_URL ?? 'http://127.0.0.1:6333';
