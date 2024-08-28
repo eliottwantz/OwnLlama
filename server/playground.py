@@ -1,6 +1,4 @@
-from rag import rag_chain_query
+from rag import add_pdf_to_vector_store
 
 if __name__ == "__main__":
-    answers = rag_chain_query("How does the game end?")
-
-    print(answers)
+    add_pdf_to_vector_store("ticket_to_ride.pdf")

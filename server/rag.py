@@ -2,17 +2,20 @@ from typing import Iterable, List
 
 from config import DATA_DIR, DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL
 from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain_chroma.vectorstores import Chroma
 from langchain_core.documents import Document
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from llm import get_ollama_llm
+from loader import load_pdf
 
 
 def split_documents(doc: Iterable[Document]):
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=40)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 
     return text_splitter.split_documents(documents=doc)
 
@@ -47,44 +50,13 @@ def retrieve_from_vector_store(query: str):
     return similar_documents
 
 
-# Convert loaded documents into strings by concatenating their content
-# and ignoring metadata
-def format_docs(docs: List[Document]):
-    return "\n\n".join(doc.page_content for doc in docs)
+def add_pdf_to_vector_store(file_name: str):
+    pdf = load_pdf(f"{DATA_DIR}/uploads/{file_name}")
+    chunks = split_documents(pdf)
+    add_to_vector_store(chunks)
 
 
-# RAG_TEMPLATE = """
-# You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use three sentences maximum and keep the answer concise.
-
-# <context>
-# {context}
-# </context>
-
-# Answer the following question:
-
-# {question}"""
-
-# def rag_chain_query(question: str):
-#     # rag_prompt = ChatPromptTemplate.from_template(RAG_TEMPLATE)
-#     rag_prompt = ChatPromptTemplate.from_messages(
-#         [
-#             ("system", system_prompt),
-#             ("human", "{question}"),
-#         ]
-#     )
-#     retriever = get_vector_store().as_retriever()
-
-#     qa_chain = (
-#         {"context": retriever | format_docs, "question": RunnablePassthrough()}
-#         | rag_prompt
-#         | get_ollama_llm()
-#         | StrOutputParser()
-#     )
-
-#     qa_chain.invoke(question)
-
-
-def rag_chain_query(question: str):
+def rag_chain_query(question: str, chat_history: List[BaseMessage]):
     system_prompt = (
         "You are an assistant for question-answering tasks. "
         "Use the following pieces of retrieved context to answer "
@@ -95,19 +67,46 @@ def rag_chain_query(question: str):
         "{context}"
     )
 
+    contextualize_query_system_prompt = (
+        "Given a chat history and the latest user question "
+        "which might reference context in the chat history, "
+        "formulate a standalone question which can be understood "
+        "without the chat history. Do NOT answer the question, "
+        "just reformulate it if needed and otherwise return it as is."
+    )
+
+    contextualize_query_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", contextualize_query_system_prompt),
+            MessagesPlaceholder("chat_history"),
+            ("human", "{input}"),
+        ]
+    )
+
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system_prompt),
+            MessagesPlaceholder("chat_history"),
             ("human", "{input}"),
         ]
     )
 
     llm = get_ollama_llm()
     retriever = get_vector_store().as_retriever()
+    history_aware_retriever = create_history_aware_retriever(
+        llm, retriever, contextualize_query_prompt
+    )
 
     question_answer_chain = create_stuff_documents_chain(llm=llm, prompt=prompt)
-    rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+    rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
-    response = rag_chain.invoke({"input": question})
+    response = rag_chain.invoke({"input": question, "chat_history": chat_history})
+
+    chat_history.extend(
+        [
+            HumanMessage(content=question),
+            AIMessage(content=response["answer"]),
+        ]
+    )
 
     return response
