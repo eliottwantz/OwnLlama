@@ -1,13 +1,16 @@
 from typing import Iterable, List
 
 from config import DATA_DIR, DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL
+from db import get_session_history
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain_chroma.vectorstores import Chroma
+from langchain_community.chat_message_histories import SQLChatMessageHistory
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from llm import get_ollama_llm
@@ -56,17 +59,7 @@ def add_pdf_to_vector_store(file_name: str):
     add_to_vector_store(chunks)
 
 
-def rag_chain_query(question: str, chat_history: List[BaseMessage]):
-    system_prompt = (
-        "You are an assistant for question-answering tasks. "
-        "Use the following pieces of retrieved context to answer "
-        "the question. If you don't know the answer, say that you "
-        "don't know. Use three sentences maximum and keep the "
-        "answer concise."
-        "\n\n"
-        "{context}"
-    )
-
+def rag_chain_query(question: str, session_id: str):
     contextualize_query_system_prompt = (
         "Given a chat history and the latest user question "
         "which might reference context in the chat history, "
@@ -83,6 +76,22 @@ def rag_chain_query(question: str, chat_history: List[BaseMessage]):
         ]
     )
 
+    llm = get_ollama_llm()
+    retriever = get_vector_store().as_retriever()
+    history_aware_retriever = create_history_aware_retriever(
+        llm, retriever, contextualize_query_prompt
+    )
+
+    system_prompt = (
+        "You are an assistant for question-answering tasks. "
+        "Use the following pieces of retrieved context to answer "
+        "the question. If you don't know the answer, say that you "
+        "don't know. Use three sentences maximum and keep the "
+        "answer concise."
+        "\n\n"
+        "{context}"
+    )
+
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system_prompt),
@@ -90,23 +99,19 @@ def rag_chain_query(question: str, chat_history: List[BaseMessage]):
             ("human", "{input}"),
         ]
     )
-
-    llm = get_ollama_llm()
-    retriever = get_vector_store().as_retriever()
-    history_aware_retriever = create_history_aware_retriever(
-        llm, retriever, contextualize_query_prompt
-    )
-
     question_answer_chain = create_stuff_documents_chain(llm=llm, prompt=prompt)
     rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
-    response = rag_chain.invoke({"input": question, "chat_history": chat_history})
-
-    chat_history.extend(
-        [
-            HumanMessage(content=question),
-            AIMessage(content=response["answer"]),
-        ]
+    conversational_rag_chain = RunnableWithMessageHistory(
+        rag_chain,
+        get_session_history,
+        input_messages_key="input",
+        history_messages_key="chat_history",
+        output_messages_key="answer",
+    )
+    response = conversational_rag_chain.invoke(
+        {"input": question},
+        config={"configurable": {"session_id": session_id}},
     )
 
     return response
