@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from langchain_core.documents import Document
 
-from server.rag import (
+from backend.rag import (
     rag_chain_query,
 )
 

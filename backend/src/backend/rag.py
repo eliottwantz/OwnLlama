@@ -1,20 +1,19 @@
-from typing import Iterable, List
+from typing import Iterable
 
-from config import DATA_DIR, DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL
-from db import get_session_history
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain_chroma.vectorstores import Chroma
-from langchain_community.chat_message_histories import SQLChatMessageHistory
 from langchain_core.documents import Document
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from llm import get_ollama_llm
-from loader import load_pdf
+
+from backend.config import DATA_DIR, DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL
+from backend.db import get_session_history
+from backend.llm import get_ollama_llm
+from backend.loader import load_pdf
 
 
 def split_documents(doc: Iterable[Document]):
@@ -54,7 +53,7 @@ def retrieve_from_vector_store(query: str):
 
 
 def add_pdf_to_vector_store(file_name: str):
-    pdf = load_pdf(f"{DATA_DIR}/uploads/{file_name}")
+    pdf = load_pdf(file_name)
     chunks = split_documents(pdf)
     add_to_vector_store(chunks)
 

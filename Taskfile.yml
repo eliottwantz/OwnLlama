@@ -1,0 +1,11 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  GREETING: Hello, World!
+
+tasks:
+  server:
+    cmds:
+      - uv run robyn --dev backend/src/backend/app.py

@@ -1,6 +1,7 @@
-from config import DEFAULT_MODEL
 from langchain_core.messages import BaseMessage
 from langchain_ollama import ChatOllama
+
+from backend.config import DEFAULT_MODEL
 
 
 def get_ollama_llm(model: str = DEFAULT_MODEL):
