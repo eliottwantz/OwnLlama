@@ -25,22 +25,9 @@ async def upload_pdf(request: Request):
             file_path = get_pdf_path(name)
             with open(file_path, "wb") as f:
                 f.write(file)
+            add_pdf_to_vector_store(name)
         except Exception as e:
             print(e)
             return {"error": "Failed to save file"}
 
     return {"message": "Files uploaded"}
-
-
-@api.post("/embed-pdf")
-async def embed_pdf(request: Request):
-    file_name = request.query_params.get("n")
-    if not file_name:
-        return {"error": "No file name provided"}
-
-    try:
-        add_pdf_to_vector_store(file_name)
-    except Exception as e:
-        return {"error": str(e)}
-
-    return {"message": f"File {file_name} embedded"}
