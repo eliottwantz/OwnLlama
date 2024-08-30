@@ -8,4 +8,4 @@ vars:
 tasks:
   server:
     cmds:
-      - uv run robyn --dev backend/src/backend/app.py
+      - uv run robyn backend/src/backend/app.py

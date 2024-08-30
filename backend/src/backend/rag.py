@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, List
 
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.history_aware_retriever import create_history_aware_retriever
@@ -14,6 +14,7 @@ from backend.config import DATA_DIR, DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_
 from backend.db import get_session_history
 from backend.llm import get_ollama_llm
 from backend.loader import load_pdf
+from backend.log import logger
 
 
 def split_documents(doc: Iterable[Document]):
@@ -36,12 +37,11 @@ def get_vector_store():
     return db
 
 
-def add_to_vector_store(documents: list[Document]):
-    # uuids = [str(uuid4()) for _ in range(len(documents))]
-
+def add_to_vector_store(documents: List[Document]):
     db = get_vector_store()
     db.add_documents(documents=documents)
-    # db.add_documents(documents=documents, ids=uuids)
+
+    logger.info(f"Added {len(documents)} documents to vector store")
 
 
 def retrieve_from_vector_store(query: str):
@@ -56,6 +56,8 @@ def add_pdf_to_vector_store(file_name: str):
     pdf = load_pdf(file_name)
     chunks = split_documents(pdf)
     add_to_vector_store(chunks)
+
+    logger.info(f"Added {file_name} to vector store")
 
 
 def rag_chain_query(question: str, session_id: str):

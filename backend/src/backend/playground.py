@@ -1,3 +1,5 @@
+from langchain_community.document_loaders import PyPDFLoader
+
 from backend.db import get_session_history
 from backend.rag import add_pdf_to_vector_store
 
@@ -9,4 +11,5 @@ if __name__ == "__main__":
     #     print(f"{parsed_msg['type']}: {parsed_msg['content']}")
 
     #     print("--------")
-    add_pdf_to_vector_store("monopoly.pdf")
+    # add_pdf_to_vector_store("monopoly.pdf")
+    add_pdf_to_vector_store("ticket_to_ride.pdf")
