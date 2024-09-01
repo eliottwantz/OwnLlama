@@ -10,3 +10,8 @@ tasks:
     cmds:
       - uv run server/app.py
     silent: true
+    
+  playground:
+    cmds:
+      - uv run server/playground.py
+    silent: true

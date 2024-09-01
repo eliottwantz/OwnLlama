@@ -12,3 +12,4 @@ vite.config.ts.timestamp-*
 qdrant_storage
 chroma_storage
 __pycache__
+db.sqlite3

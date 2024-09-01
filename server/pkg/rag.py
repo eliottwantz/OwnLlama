@@ -1,11 +1,15 @@
-from typing import Iterable, List
+from dataclasses import dataclass
+from typing import Annotated, Dict, Iterable, List, Set, TypedDict
 
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain_chroma.vectorstores import Chroma
 from langchain_core.documents import Document
+from langchain_core.messages import BaseMessage
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import RunnablePassthrough
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -115,4 +119,25 @@ def rag_chain_query(question: str, session_id: str):
         config={"configurable": {"session_id": session_id}},
     )
 
+    sources: Dict[str, Set[int]] = {}
+    for doc in response["context"]:
+        filename = doc.metadata["source"].split("/")[-1]
+        page_number = doc.metadata["page"]
+
+        if filename not in sources:
+            sources[filename] = set()
+
+        sources[filename].add(page_number)
+
+    response = AnswerWithSources(**response, sources=sources)
+
     return response
+
+
+@dataclass
+class AnswerWithSources:
+    input: str
+    chat_history: List[BaseMessage]
+    context: List[Document]
+    answer: str
+    sources: Dict[str, Set[int]]
