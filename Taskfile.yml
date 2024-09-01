@@ -8,4 +8,5 @@ vars:
 tasks:
   server:
     cmds:
-      - uv run robyn backend/src/backend/app.py
+      - uv run server/app.py
+    silent: true

@@ -2,7 +2,7 @@ import os
 
 from robyn import Robyn
 
-from backend.api.v1.routes import api
+from server.pkg.api.v1.routes import api
 
 app = Robyn(__file__)
 app.include_router(api)

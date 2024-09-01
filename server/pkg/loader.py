@@ -1,6 +1,6 @@
 from langchain_community.document_loaders import PyPDFLoader
 
-from backend.config import DATA_DIR
+from server.config import DATA_DIR
 
 
 def get_pdf_path(file_name: str):

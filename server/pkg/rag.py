@@ -10,11 +10,11 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from backend.config import DATA_DIR, DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL
-from backend.db import get_session_history
-from backend.llm import get_ollama_llm
-from backend.loader import load_pdf
-from backend.log import logger
+from server.config import DATA_DIR, DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL
+from server.pkg.db import get_session_history
+from server.pkg.llm import get_ollama_llm
+from server.pkg.loader import load_pdf
+from server.pkg.log import logger
 
 
 def split_documents(doc: Iterable[Document]):

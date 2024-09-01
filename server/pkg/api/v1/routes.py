@@ -1,7 +1,6 @@
+from pkg.loader import get_pdf_path
+from pkg.rag import add_pdf_to_vector_store
 from robyn import Request, SubRouter
-
-from backend.loader import get_pdf_path
-from backend.rag import add_pdf_to_vector_store
 
 api = SubRouter(__name__, prefix="/api/v1")
 
