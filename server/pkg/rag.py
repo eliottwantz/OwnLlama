@@ -114,24 +114,32 @@ def rag_chain_query(question: str, session_id: str):
         history_messages_key="chat_history",
         output_messages_key="answer",
     )
-    response = conversational_rag_chain.invoke(
+    stream = conversational_rag_chain.stream(
         {"input": question},
         config={"configurable": {"session_id": session_id}},
     )
 
-    sources: Dict[str, Set[int]] = {}
-    for doc in response["context"]:
-        filename = doc.metadata["source"].split("/")[-1]
-        page_number = doc.metadata["page"]
+    response = AnswerWithSources(
+        input=question, chat_history=[], context=[], answer="", sources={}
+    )
 
-        if filename not in sources:
-            sources[filename] = set()
+    for chunk in stream:
+        if "context" in chunk:
+            response.context = chunk["context"]
+            for doc in chunk["context"]:
+                filename = doc.metadata["source"].split("/")[-1]
+                page_number = doc.metadata["page"]
 
-        sources[filename].add(page_number)
+                if filename not in response.sources:
+                    response.sources[filename] = set()
 
-    response = AnswerWithSources(**response, sources=sources)
-
-    return response
+                response.sources[filename].add(page_number)
+            yield response.sources
+        if "chat_history" in chunk:
+            response.chat_history = chunk["chat_history"]
+        if "answer" in chunk:
+            response.answer += chunk["answer"]
+            yield chunk["answer"]
 
 
 @dataclass
